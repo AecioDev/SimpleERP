@@ -70,8 +70,6 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  console.log("userMenu", user);
-
   // Handle responsive collapse on mobile
   useEffect(() => {
     const handleResize = () => {

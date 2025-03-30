@@ -20,8 +20,6 @@ const AuthService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>("/auth/login", credentials);
 
-    console.log("Login response:", response.data);
-
     const { access_token, refresh_token, user } = response.data.data; // Corrigindo o acesso aos dados
 
     // Armazenar tokens e informações do usuário

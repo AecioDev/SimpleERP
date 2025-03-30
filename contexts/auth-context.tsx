@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { toast } = useToast();
 
-  const mapUserToContext = (user: User): UserContext => {
+  const mapUserToContext = (user: User): UserContext | null => {
     return {
       id: user.id,
       name: user.name,
@@ -55,11 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (AuthService.isAuthenticated()) {
           const storedUser = AuthService.getStoredUser();
           if (storedUser) {
-            setUser(mapUserToContext(storedUser.data.user));
+            setUser(mapUserToContext(storedUser.data.user) || null);
           } else {
             // Se temos token mas não temos usuário, buscar do servidor
             const currentUser = await AuthService.getCurrentUser();
-            setUser(mapUserToContext(currentUser.data.user));
+            setUser(mapUserToContext(currentUser.data.user) || null);
           }
         }
       } catch (error) {
