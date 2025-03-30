@@ -1,4 +1,5 @@
 import api from "./api";
+import { Pagination } from "./pagination-service";
 import { Role } from "./role-service";
 
 export interface User {
@@ -12,6 +13,11 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserList {
+  users: User[];
+  pagination: Pagination;
 }
 
 export interface CreateUserDto {
@@ -38,12 +44,10 @@ export interface ChangePasswordDto {
 }
 
 const UserService = {
-  async getUsers(
-    page = 1,
-    limit = 10
-  ): Promise<{ data: User[]; total: number }> {
+  async getUsers(page = 1, limit = 10): Promise<UserList> {
     const response = await api.get(`/users?page=${page}&limit=${limit}`);
-    return response.data;
+
+    return response.data.data;
   },
 
   async getUserById(id: number): Promise<User> {

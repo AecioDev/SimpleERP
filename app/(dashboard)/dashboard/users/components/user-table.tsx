@@ -35,9 +35,6 @@ export function UserTable({
 }: UserTableProps) {
   const { toast } = useToast();
 
-  console.log("UserTable:", users);
-  console.log("RolesTable:", roles);
-
   const toggleUserStatus = async (id: number) => {
     try {
       const userToToggle = users.find((u) => u.id === id);

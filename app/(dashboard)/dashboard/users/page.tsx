@@ -46,8 +46,9 @@ export default function UsersPage() {
           UserService.getUsers(currentPage, 10),
           RoleService.getRoles(),
         ]);
-        setUsers(usersResponse.data);
-        setTotalPages(Math.ceil(usersResponse.total / 10));
+
+        setUsers(usersResponse.users);
+        setTotalPages(Math.ceil(usersResponse.pagination.totalPages / 10));
         setRoles(rolesResponse);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
