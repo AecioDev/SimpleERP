@@ -1,54 +1,52 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
-import { Loader2 } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 export function LoginForm() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
-  const { toast } = useToast()
-  const router = useRouter()
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const success = await login(username, password)
+      const success = await login(username, password);
 
       if (success) {
+        console.log("Login realizado com sucesso");
         toast({
           title: "Login realizado com sucesso",
           description: "Você será redirecionado para o dashboard",
-        })
-        router.push("/dashboard")
+        });
+        router.push("/dashboard");
       } else {
+        console.log("Login falhou");
         toast({
+          title: "Falha no login",
+          description: "Verifique suas credenciais e tente novamente.",
           variant: "destructive",
-          title: "Erro ao fazer login",
-          description: "Usuário ou senha inválidos",
-        })
+        });
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro ao fazer login",
-        description: "Ocorreu um erro ao tentar fazer login",
-      })
+      // Erro já tratado no contexto de autenticação
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,6 +82,5 @@ export function LoginForm() {
         )}
       </Button>
     </form>
-  )
+  );
 }
-

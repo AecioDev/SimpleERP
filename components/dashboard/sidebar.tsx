@@ -1,21 +1,30 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Logo } from "@/components/ui/logo"
-import { BarChart3, Users, ShoppingCart, Package, Wallet, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
+import {
+  BarChart3,
+  Users,
+  ShoppingCart,
+  Package,
+  Wallet,
+  Settings,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface NavItem {
-  title: string
-  href: string
-  icon: React.ElementType
-  requiredRole?: string[]
+  title: string;
+  href: string;
+  icon: React.ElementType;
+  requiredRole?: string[];
 }
 
 const navItems: NavItem[] = [
@@ -54,50 +63,66 @@ const navItems: NavItem[] = [
     icon: Settings,
     requiredRole: ["ADMIN"],
   },
-]
+];
 
 export function DashboardSidebar() {
-  const [collapsed, setCollapsed] = useState(false)
-  const pathname = usePathname()
-  const { user } = useAuth()
+  const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+  const { user } = useAuth();
+
+  console.log("userMenu", user);
 
   // Handle responsive collapse on mobile
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
-        setCollapsed(true)
+        setCollapsed(true);
       } else {
-        setCollapsed(false)
+        setCollapsed(false);
       }
-    }
+    };
 
-    handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Filter nav items based on user role
   const filteredNavItems = navItems.filter((item) => {
-    if (!item.requiredRole) return true
-    return item.requiredRole.includes(user?.role || "")
-  })
+    if (!item.requiredRole) return true;
+    return item.requiredRole.includes(user?.role || "");
+  });
 
   return (
     <aside
-      className={cn("flex h-screen flex-col border-r bg-card transition-all duration-300", collapsed ? "w-16" : "w-64")}
+      className={cn(
+        "flex h-screen flex-col border-r bg-card transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}
     >
       <div className="flex h-16 items-center justify-between border-b px-4">
-        <div className={cn("flex items-center gap-2", collapsed && "justify-center w-full")}>
+        <div
+          className={cn(
+            "flex items-center gap-2",
+            collapsed && "justify-center w-full"
+          )}
+        >
           <Logo className={cn("h-8 w-8", collapsed ? "mx-auto" : "")} />
-          {!collapsed && <span className="text-lg font-semibold">ERP System</span>}
+          {!collapsed && (
+            <span className="text-lg font-semibold">ERP System</span>
+          )}
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
-          className={cn("h-8 w-8", collapsed && "absolute right-0 mr-4")}
+          className={cn("h-8 w-8", collapsed && "right-0 mr-4")}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </Button>
       </div>
       <nav className="flex-1 overflow-y-auto py-4">
@@ -106,10 +131,20 @@ export function DashboardSidebar() {
             <li key={item.href}>
               <Link href={item.href} passHref>
                 <Button
-                  variant={pathname === item.href ? "secondary" : "ghost"}
-                  className={cn("w-full justify-start", collapsed ? "px-0 justify-center" : "")}
+                  variant={
+                    pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`)
+                      ? "secondary"
+                      : "ghost"
+                  }
+                  className={cn(
+                    "w-full justify-start",
+                    collapsed ? "px-0 justify-center" : ""
+                  )}
                 >
-                  <item.icon className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")} />
+                  <item.icon
+                    className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")}
+                  />
                   {!collapsed && <span>{item.title}</span>}
                 </Button>
               </Link>
@@ -118,6 +153,5 @@ export function DashboardSidebar() {
         </ul>
       </nav>
     </aside>
-  )
+  );
 }
-

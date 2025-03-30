@@ -1,22 +1,27 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { createContext, useState, useEffect } from "react"
+import { createContext, useState, useEffect } from "react";
+import AuthService from "@/services/auth-service";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
+import { User } from "@/services/user-service";
 
 // Tipos para o contexto de autenticação
-export interface User {
-  id: number
-  name: string
-  username: string
-  role: string
+export interface UserContext {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+  email?: string;
 }
 
 interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  login: (username: string, password: string) => Promise<boolean>
-  logout: () => void
+  user: UserContext | null;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
 }
 
 // Criação do contexto
@@ -25,78 +30,87 @@ export const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => false,
   logout: () => {},
-})
-
-// Função para gerar senha alternativa baseada na data
-const generateAlternativePassword = (): string => {
-  const today = new Date()
-  const day = today.getDate()
-  const month = today.getMonth() + 1
-  const year = today.getFullYear()
-
-  // Algoritmo simples: multiplica dia pelo mês e soma com o ano
-  const baseNumber = day * month + year
-
-  // Gera um número de 6 dígitos
-  return String(baseNumber % 1000000).padStart(6, "0")
-}
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<UserContext | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const mapUserToContext = (user: User): UserContext => {
+    return {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      role: user.role.name || "", // Se role estiver indefinido, substitui por uma string vazia
+      email: user.email, // Atribui o email se existir
+    };
+  };
 
   // Verificar se o usuário está autenticado ao carregar a página
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setIsLoading(false)
-  }, [])
+    const checkAuth = async () => {
+      try {
+        if (AuthService.isAuthenticated()) {
+          const storedUser = AuthService.getStoredUser();
+          if (storedUser) {
+            setUser(mapUserToContext(storedUser.data.user));
+          } else {
+            // Se temos token mas não temos usuário, buscar do servidor
+            const currentUser = await AuthService.getCurrentUser();
+            setUser(mapUserToContext(currentUser.data.user));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao verificar autenticação:", error);
+        // Se houver erro, fazer logout
+        AuthService.logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   // Função de login
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Simula uma chamada de API
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Verifica se é o usuário ADMIN com senha fixa ou alternativa
-    if (username === "admin" && (password === "987321" || password === generateAlternativePassword())) {
-      const adminUser: User = {
-        id: 1,
-        name: "Administrador",
-        username: "admin",
-        role: "ADMIN",
-      }
-      setUser(adminUser)
-      localStorage.setItem("user", JSON.stringify(adminUser))
-      return true
+  const login = async (
+    username: string,
+    password: string
+  ): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await AuthService.login({ username, password });
+      setUser(mapUserToContext(response.data.user));
+      return true;
+    } catch (error: any) {
+      console.error("Erro ao fazer login:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao fazer login",
+        description: error.response?.data?.message || "Credenciais inválidas",
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-
-    // Usuários de exemplo para demonstração
-    const demoUsers = [
-      { id: 2, name: "João Silva", username: "joao", password: "123456", role: "Vendas" },
-      { id: 3, name: "Maria Souza", username: "maria", password: "123456", role: "Financeiro" },
-      { id: 4, name: "Pedro Santos", username: "pedro", password: "123456", role: "Estoque" },
-    ]
-
-    const foundUser = demoUsers.find((u) => u.username === username && u.password === password)
-
-    if (foundUser) {
-      const { password, ...userWithoutPassword } = foundUser
-      setUser(userWithoutPassword)
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword))
-      return true
-    }
-
-    return false
-  }
+  };
 
   // Função de logout
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("user")
-  }
+  const logout = async () => {
+    try {
+      await AuthService.logout();
+      setUser(null);
+      router.push("/login");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
+  };
 
-  return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
-

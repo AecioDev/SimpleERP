@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,41 +25,68 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { Edit, MoreHorizontal, Trash2, UserPlus } from "lucide-react"
+import { Edit, MoreHorizontal, Trash2, UserPlus, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-// Tipos de perfil disponíveis
-const roles = ["ADMIN", "Vendas", "Compras", "Estoque", "Financeiro", "Gerente"]
-
-// Usuários de exemplo
-const initialUsers = [
-  { id: 1, name: "Admin", username: "admin", role: "ADMIN", active: true },
-  { id: 2, name: "João Silva", username: "joao", role: "Vendas", active: true },
-  { id: 3, name: "Maria Souza", username: "maria", role: "Financeiro", active: true },
-  { id: 4, name: "Pedro Santos", username: "pedro", role: "Estoque", active: false },
-]
+import UserService, { type User, type CreateUserDto } from "@/services/user-service"
+import RoleService, { type Role } from "@/services/role-service"
 
 export default function UsersPage() {
-  const [users, setUsers] = useState(initialUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
-  const [newUser, setNewUser] = useState({
-    name: "",
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [newUser, setNewUser] = useState<CreateUserDto>({
     username: "",
     password: "",
-    role: "",
+    name: "",
+    email: "",
+    role_id: 0,
   })
   const { user } = useAuth()
   const { toast } = useToast()
   const router = useRouter()
 
   // Verificar se o usuário é admin
-  if (user?.role !== "ADMIN") {
-    router.push("/dashboard")
-    return null
-  }
+  useEffect(() => {
+    if (user?.role !== "ADMIN") {
+      router.push("/dashboard")
+    }
+  }, [user, router])
 
-  const handleAddUser = () => {
-    if (!newUser.name || !newUser.username || !newUser.password || !newUser.role) {
+  // Carregar usuários e perfis
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true)
+        const [usersResponse, rolesResponse] = await Promise.all([
+          UserService.getUsers(currentPage, 10),
+          RoleService.getRoles(),
+        ])
+
+        setUsers(usersResponse.data)
+        setTotalPages(Math.ceil(usersResponse.total / 10))
+        setRoles(rolesResponse)
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error)
+        toast({
+          variant: "destructive",
+          title: "Erro ao carregar dados",
+          description: "Não foi possível carregar a lista de usuários e perfis.",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [currentPage, toast])
+
+  const handleAddUser = async () => {
+    if (!newUser.username || !newUser.password || !newUser.name || !newUser.role_id) {
       toast({
         variant: "destructive",
         title: "Erro ao adicionar usuário",
@@ -68,43 +95,95 @@ export default function UsersPage() {
       return
     }
 
-    const id = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1
+    try {
+      const createdUser = await UserService.createUser(newUser)
 
-    setUsers([
-      ...users,
-      {
-        id,
-        name: newUser.name,
-        username: newUser.username,
-        role: newUser.role,
-        active: true,
-      },
-    ])
+      setUsers([...users, createdUser])
+      setNewUser({
+        username: "",
+        password: "",
+        name: "",
+        email: "",
+        role_id: 0,
+      })
+      setIsAddUserOpen(false)
 
-    setNewUser({
-      name: "",
-      username: "",
-      password: "",
-      role: "",
-    })
-
-    setIsAddUserOpen(false)
-
-    toast({
-      title: "Usuário adicionado",
-      description: `O usuário ${newUser.name} foi adicionado com sucesso`,
-    })
+      toast({
+        title: "Usuário adicionado",
+        description: `O usuário ${createdUser.name} foi adicionado com sucesso`,
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao adicionar usuário",
+        description: error.response?.data?.message || "Ocorreu um erro ao adicionar o usuário",
+      })
+    }
   }
 
-  const toggleUserStatus = (id: number) => {
-    setUsers(users.map((user) => (user.id === id ? { ...user, active: !user.active } : user)))
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user)
+    setIsEditUserOpen(true)
+  }
 
-    const user = users.find((u) => u.id === id)
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return
 
-    toast({
-      title: user?.active ? "Usuário desativado" : "Usuário ativado",
-      description: `O usuário ${user?.name} foi ${user?.active ? "desativado" : "ativado"} com sucesso`,
-    })
+    try {
+      const updatedUser = await UserService.updateUser(selectedUser.id, {
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role_id: selectedUser.role_id,
+        is_active: selectedUser.is_active,
+      })
+
+      setUsers(users.map((u) => (u.id === updatedUser.id ? updatedUser : u)))
+      setIsEditUserOpen(false)
+      setSelectedUser(null)
+
+      toast({
+        title: "Usuário atualizado",
+        description: `O usuário ${updatedUser.name} foi atualizado com sucesso`,
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar usuário",
+        description: error.response?.data?.message || "Ocorreu um erro ao atualizar o usuário",
+      })
+    }
+  }
+
+  const toggleUserStatus = async (id: number) => {
+    try {
+      const userToToggle = users.find((u) => u.id === id)
+      if (!userToToggle) return
+
+      const updatedUser = await UserService.updateUser(id, {
+        is_active: !userToToggle.is_active,
+      })
+
+      setUsers(users.map((u) => (u.id === id ? updatedUser : u)))
+
+      toast({
+        title: updatedUser.is_active ? "Usuário ativado" : "Usuário desativado",
+        description: `O usuário ${updatedUser.name} foi ${updatedUser.is_active ? "ativado" : "desativado"} com sucesso`,
+      })
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao alterar status do usuário",
+        description: error.response?.data?.message || "Ocorreu um erro ao alterar o status do usuário",
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
   }
 
   return (
@@ -144,6 +223,15 @@ export default function UsersPage() {
                 />
               </div>
               <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
@@ -154,14 +242,17 @@ export default function UsersPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="role">Perfil</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <Select
+                  value={newUser.role_id.toString()}
+                  onValueChange={(value) => setNewUser({ ...newUser, role_id: Number.parseInt(value) })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um perfil" />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -190,6 +281,7 @@ export default function UsersPage() {
                 <tr className="border-b bg-muted/50 text-left text-sm font-medium">
                   <th className="px-4 py-3">Nome</th>
                   <th className="px-4 py-3">Usuário</th>
+                  <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Perfil</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Ações</th>
@@ -200,18 +292,19 @@ export default function UsersPage() {
                   <tr key={user.id} className="border-b">
                     <td className="px-4 py-3">{user.name}</td>
                     <td className="px-4 py-3">{user.username}</td>
+                    <td className="px-4 py-3">{user.email || "-"}</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                        {user.role}
+                        {roles.find((r) => r.id === user.role_id)?.name || user.role}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-medium ${
-                          user.active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {user.active ? "Ativo" : "Inativo"}
+                        {user.is_active ? "Ativo" : "Inativo"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -224,13 +317,13 @@ export default function UsersPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Ações</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
                             <Edit className="mr-2 h-4 w-4" />
                             Editar
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleUserStatus(user.id)}>
                             <Trash2 className="mr-2 h-4 w-4" />
-                            {user.active ? "Desativar" : "Ativar"}
+                            {user.is_active ? "Desativar" : "Ativar"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -240,8 +333,87 @@ export default function UsersPage() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-end space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Dialog para editar usuário */}
+      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogDescription>Atualize as informações do usuário</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input
+                  id="edit-name"
+                  value={selectedUser.name}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={selectedUser.email || ""}
+                  onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-role">Perfil</Label>
+                <Select
+                  value={selectedUser.role_id.toString()}
+                  onValueChange={(value) => setSelectedUser({ ...selectedUser, role_id: Number.parseInt(value) })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um perfil" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateUser}>Salvar Alterações</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
