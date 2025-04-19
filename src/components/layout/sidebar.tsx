@@ -3,18 +3,16 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { systemNavItems } from "@/config/navigation";
+import { SidebarItem } from "./sidebarItem";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = usePathname();
   const { user } = useAuth();
 
   // Handle responsive collapse on mobile
@@ -73,27 +71,7 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-2">
           {filteredNavItems.map((item) => (
-            <li key={item.href}>
-              <Link href={item.href} passHref>
-                <Button
-                  variant={
-                    pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`)
-                      ? "secondary"
-                      : "ghost"
-                  }
-                  className={cn(
-                    "w-full justify-start",
-                    collapsed ? "px-0 justify-center" : ""
-                  )}
-                >
-                  <item.icon
-                    className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")}
-                  />
-                  {!collapsed && <span>{item.title}</span>}
-                </Button>
-              </Link>
-            </li>
+            <SidebarItem key={item.title} item={item} collapsed={collapsed} />
           ))}
         </ul>
       </nav>
