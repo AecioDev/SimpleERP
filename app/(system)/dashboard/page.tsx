@@ -16,6 +16,22 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { redirect } from "next/navigation";
+import { routes } from "@/config/routes";
+
+// Funcionalidade de Dashboard por perfil
+// function getDashboardByRole(role: string): string {
+//   switch (role) {
+//     case "ADMIN":
+//       return routes.dashboards.admin;
+//     case "Vendas":
+//       return routes.dashboards.vendas;
+//     case "Financeiro":
+//       return routes.dashboards.financeiro;
+//     default:
+//       return "/login";
+//   }
+// }
+//router.push(getDashboardByRole(currentUser.role));
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth();

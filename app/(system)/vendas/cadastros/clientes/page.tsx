@@ -13,9 +13,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { Customer } from "@/services/customer/customer-service";
-import { CustomersList } from "@/components/customers/customers-list";
-import { AddCustomerForm } from "@/components/customers/add-customer-form";
-import { EditCustomerForm } from "@/components/customers/edit-customer-form";
+import Link from "next/link";
+import { routes } from "@/config/routes";
+import { Button } from "rizzui";
+import { PiPlusBold } from "react-icons/pi";
+import { CustomersList } from "./components/customers-list";
 
 export default function CustomersPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -53,10 +55,6 @@ export default function CustomersPage() {
     setIsEditCustomerOpen(true);
   };
 
-  const handleCustomerAdded = (newCustomer: Customer) => {
-    setCustomers([newCustomer, ...customers]);
-  };
-
   const handleCustomerUpdated = (updatedCustomer: Customer) => {
     setCustomers(
       customers.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c))
@@ -80,7 +78,17 @@ export default function CustomersPage() {
             Gerencie os clientes do seu negócio
           </p>
         </div>
-        <AddCustomerForm onCustomerAdded={handleCustomerAdded} />
+        <div>
+          <Link
+            href={routes.vendas.cadastros.createCliente}
+            className="w-full @lg:w-auto"
+          >
+            <Button as="span" className="w-full @lg:w-auto">
+              <PiPlusBold className="me-1.5 h-[17px] w-[17px]" />
+              Add Cliente
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
@@ -94,13 +102,6 @@ export default function CustomersPage() {
           <CustomersList onEdit={handleEditCustomer} />
         </CardContent>
       </Card>
-
-      <EditCustomerForm
-        customer={selectedCustomer}
-        open={isEditCustomerOpen}
-        onOpenChange={setIsEditCustomerOpen}
-        onCustomerUpdated={handleCustomerUpdated}
-      />
     </div>
   );
 }

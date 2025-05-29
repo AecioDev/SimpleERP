@@ -1,31 +1,7 @@
 import { Customer } from "../customer/customer-service";
 import { Supplier } from "../supplier/supplier-service";
 
-export interface Country {
-  id: number;
-  name: string;
-  bacen_code: string;
-  phone_code: string;
-}
-
-export interface State {
-  id: number;
-  name: string;
-  uf: string;
-  ibge_code: string;
-  country_id: number;
-  country: Country;
-}
-
-export interface City {
-  id: number;
-  name: string;
-  ibge_code: string;
-  state_id: number;
-  state: State;
-}
-
-export interface Address {
+export interface ddAddress {
   id: number;
   street: string;
   number: string;

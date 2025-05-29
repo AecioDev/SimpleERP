@@ -19,7 +19,7 @@ import { Edit, Eye, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
 import CustomerService, {
   type Customer,
 } from "@/services/customer/customer-service";
-import { DeleteCustomerDialog } from "./delete-customer-dialog";
+import { DeleteCustomerDialog } from "src/components/customers/delete-customer-dialog";
 
 interface CustomersListProps {
   onEdit: (customer: Customer) => void;
@@ -54,7 +54,7 @@ export function CustomersList({ onEdit }: CustomersListProps) {
           10,
           filters
         );
-        setCustomers(response.customers);
+        setCustomers(response.data);
         setTotalPages(Math.ceil(response.pagination.totalPages / 10));
       } catch (error) {
         console.error("Erro ao carregar clientes:", error);
@@ -169,15 +169,17 @@ export function CustomersList({ onEdit }: CustomersListProps) {
               </tr>
             ) : (
               customers.map((customer) => {
-                const phone =
-                  customer.contacts.find((c) => c.contact_type === "phone")
-                    ?.contact || "-";
-                const email =
-                  customer.contacts.find((c) => c.contact_type === "email")
-                    ?.contact || "-";
-                const address = customer.addresses[0];
-                const city = address?.city.name || "-";
-                const state = address?.city.state.name || "-";
+                const phone = customer.contacts
+                  ? customer.contacts.find((c) => c.type === "phone")?.contact
+                  : "-";
+                const email = customer.contacts
+                  ? customer.contacts.find((c) => c.type === "email")?.contact
+                  : "-";
+                const address = customer.addresses
+                  ? customer.addresses[0]
+                  : "-";
+                //const city =  address?.city ? address?.city.name || "-";
+                //const state = address?.city.state.name || "-";
 
                 return (
                   <tr key={customer.id} className="border-b">
@@ -195,7 +197,8 @@ export function CustomersList({ onEdit }: CustomersListProps) {
                     <td className="px-4 py-3">{phone}</td>
                     <td className="px-4 py-3">{email}</td>
                     <td className="px-4 py-3">
-                      {city !== "-" && state !== "-" ? `${city}/${state}` : "-"}
+                      {/*city !== "-" && state !== "-" ? `${city}/${state}` : "-"*/}{" "}
+                      Cidade / UF
                     </td>
                     <td className="px-4 py-3 text-right">
                       <DropdownMenu>

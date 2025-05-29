@@ -1,58 +1,75 @@
 import api from "../api";
-import { Address } from "../common/address";
+import { Address } from "../common/address-service";
 import { Contact } from "../common/contacts";
 import { Pagination } from "../pagination-service";
 import { User } from "../user-service";
+import { z } from "zod";
 
 export interface Customer {
   id: number;
   first_name: string;
   last_name: string;
-  person_type: string;
+  person_type: "fisica" | "juridica" | string;
   document_number: string;
   company_name: string;
   is_active: boolean;
-  notes: string;
 
-  created_by: number;
-  UserCreate: User;
-  updated_by: number;
-  UserUpdate: User;
+  addresses?: Address[] | null;
+  contacts?: Contact[] | null;
 
-  created_at: string;
+  created_at: string; // backend envia time.Time, mas no frontend geralmente string ISO
   updated_at: string;
+}
 
-  documents: Document[];
-  addresses: Address[];
-  contacts: Contact[];
+export interface CustomerDetail extends Customer {
+  created_by?: User | null;
+  updated_by?: User | null;
+
+  //sales?: Sale[] | null;
+  //transactions?: Transaction[] | null;
 }
 
 export interface CustomerList {
-  customers: Customer[];
-  pagination: Pagination;
+  data: Customer[];
+  pagination: Pagination; // defina Pagination conforme seu DTO PaginationDTO do backend
 }
 
-export interface CreateCustomerDto {
-  first_name: string;
-  last_name: string;
-  person_type: "fisica" | "juridica";
-  DocumentNumber: string;
-  company_name: string;
-  is_active: boolean;
-  notes: string;
-  user: User;
-}
+export const customerFormSchema = z
+  .object({
+    first_name: z
+      .string()
+      .min(1, "Nome é obrigatório")
+      .transform((str) => str.trim()),
+    last_name: z
+      .string()
+      .optional()
+      .transform((str) => str?.trim() || ""),
+    person_type: z.enum(["fisica", "juridica"]),
+    document_number: z
+      .string()
+      .min(1, "Número do documento é obrigatório")
+      .transform((str) => str.trim()),
+    company_name: z
+      .string()
+      .optional()
+      .transform((str) => str?.trim()),
+    is_active: z.boolean().default(true),
+    notes: z
+      .string()
+      .optional()
+      .transform((str) => str?.trim() || ""),
+  })
+  .refine(
+    (data) => (data.person_type === "juridica" ? !!data.company_name : true),
+    {
+      message: "Razão social é obrigatória para pessoa jurídica",
+      path: ["company_name"],
+    }
+  );
 
-export interface UpdateCustomerDto {
-  first_name: string;
-  last_name: string;
-  person_type: "fisica" | "juridica";
-  DocumentNumber: string;
-  company_name: string;
-  is_active: boolean;
-  notes: string;
-  user: User;
-}
+export type CreateCustomerInput = z.infer<typeof customerFormSchema>;
+
+export interface UpdateCustomerDto extends CreateCustomerInput {}
 
 const CustomerService = {
   async getCustomers(
@@ -82,14 +99,14 @@ const CustomerService = {
     return response.data;
   },
 
-  async createCustomer(customer: CreateCustomerDto): Promise<Customer> {
+  async createCustomer(customer: CreateCustomerInput): Promise<Customer> {
     const response = await api.post("/customers", customer);
     return response.data;
   },
 
   async updateCustomer(
     id: number,
-    customer: UpdateCustomerDto
+    customer: CreateCustomerInput
   ): Promise<Customer> {
     const response = await api.put(`/customers/${id}`, customer);
     return response.data;
