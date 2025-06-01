@@ -13,12 +13,42 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import CustomerService from "@/services/customer/customer-service";
 import { useRouter } from "next/navigation";
+import React from "react";
 
+// --- Componente Reutilizável para Campo de Formulário ---
+interface FormFieldProps {
+  label: string;
+  id: string;
+  children: React.ReactNode;
+  errorMessage?: string;
+  className?: string;
+}
+
+const FormField: React.FC<FormFieldProps> = ({
+  label,
+  id,
+  children,
+  errorMessage,
+  className,
+}) => (
+  <div className={className}>
+    <Label htmlFor={id} className="text-foreground">
+      {label}
+    </Label>
+    {children}
+    {errorMessage && (
+      <p className="text-sm text-destructive mt-1">{errorMessage}</p>
+    )}
+  </div>
+);
+
+// --- Componente Principal do Formulário ---
 export default function BasicInfoForm() {
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CreateCustomerInput>({
     resolver: zodResolver(customerFormSchema),
@@ -32,85 +62,124 @@ export default function BasicInfoForm() {
   const router = useRouter();
 
   const personType = watch("person_type");
+  const isActive = watch("is_active");
 
   const onSubmit = async (data: CreateCustomerInput) => {
     try {
       await CustomerService.createCustomer(data);
       toast({
         title: "Cliente cadastrado com sucesso!",
+        description: "Você será redirecionado em breve.",
       });
       router.push("/vendas/cadastros/clientes");
     } catch (error) {
+      console.error("Erro ao cadastrar cliente:", error);
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar cliente",
-        description: "Verifique os dados e tente novamente.",
+        description:
+          "Verifique os dados e tente novamente. Detalhes: " +
+          (error instanceof Error ? error.message : "Erro desconhecido"),
       });
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label>Nome</Label>
-          <Input {...register("first_name")} />
-          {errors.first_name && (
-            <p className="text-sm text-red-500">{errors.first_name.message}</p>
-          )}
-        </div>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="bg-form-background space-y-6 p-6 rounded-lg shadow-md"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          label="Nome"
+          id="first_name"
+          errorMessage={errors.first_name?.message}
+        >
+          <Input
+            id="first_name"
+            {...register("first_name")}
+            className="border-input focus-visible:ring-ring"
+          />
+        </FormField>
 
-        <div>
-          <Label>Sobrenome</Label>
-          <Input {...register("last_name")} />
-          {errors.last_name && (
-            <p className="text-sm text-red-500">{errors.last_name.message}</p>
-          )}
-        </div>
+        <FormField
+          label="Sobrenome"
+          id="last_name"
+          errorMessage={errors.last_name?.message}
+        >
+          <Input
+            id="last_name"
+            {...register("last_name")}
+            className="border-input focus-visible:ring-ring"
+          />
+        </FormField>
 
-        <div>
-          <Label>Tipo de Pessoa</Label>
-          <select {...register("person_type")} className="form-select w-full">
-            <option value="fisica">Física</option>
-            <option value="juridica">Jurídica</option>
+        <FormField label="Tipo de Pessoa" id="person_type">
+          <select
+            id="person_type"
+            {...register("person_type")}
+            className="w-full p-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-input text-foreground"
+          >
+            <option value="fisica">Pessoa Física</option>
+            <option value="juridica">Pessoa Jurídica</option>
           </select>
-        </div>
+        </FormField>
 
-        <div>
-          <Label>Número do Documento</Label>
-          <Input {...register("document_number")} />
-          {errors.document_number && (
-            <p className="text-sm text-red-500">
-              {errors.document_number.message}
-            </p>
-          )}
-        </div>
+        <FormField
+          label="Número do Documento"
+          id="document_number"
+          errorMessage={errors.document_number?.message}
+        >
+          <Input
+            id="document_number"
+            {...register("document_number")}
+            placeholder={personType === "fisica" ? "CPF" : "CNPJ"}
+            className="border-input focus-visible:ring-ring"
+          />
+        </FormField>
 
         {personType === "juridica" && (
-          <div className="md:col-span-2">
-            <Label>Razão Social</Label>
-            <Input {...register("company_name")} />
-            {errors.company_name && (
-              <p className="text-sm text-red-500">
-                {errors.company_name.message}
-              </p>
-            )}
-          </div>
+          <FormField
+            label="Razão Social"
+            id="company_name"
+            errorMessage={errors.company_name?.message}
+            className="md:col-span-2"
+          >
+            <Input
+              id="company_name"
+              {...register("company_name")}
+              className="border-input focus-visible:ring-ring"
+            />
+          </FormField>
         )}
 
-        <div className="md:col-span-2">
-          <Label>Observações</Label>
-          <Input {...register("notes")} />
-        </div>
+        <FormField label="Observações" id="notes" className="md:col-span-2">
+          <Input
+            id="notes"
+            {...register("notes")}
+            className="border-input focus-visible:ring-ring"
+          />
+        </FormField>
 
-        <div className="flex items-center gap-2">
-          <Label>Ativo?</Label>
-          <Switch {...register("is_active")} defaultChecked />
+        <div className="flex items-center space-x-2 md:col-span-2">
+          <Switch
+            id="is_active"
+            checked={isActive}
+            onCheckedChange={(checked) => setValue("is_active", checked)}
+            {...register("is_active")}
+          />
+          <Label htmlFor="is_active" className="text-foreground">
+            Cliente Ativo
+          </Label>
         </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Salvando..." : "Salvar"}
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        className="w-full md:w-auto mt-6 px-8 py-2"
+      >
+        {isSubmitting ? "Salvando..." : "Salvar Cliente"}
       </Button>
     </form>
   );

@@ -3,7 +3,6 @@
 import type React from "react";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +16,6 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,19 +30,19 @@ export function LoginForm() {
           title: "Login realizado com sucesso",
           description: "Você será redirecionado para o dashboard",
         });
-        router.push("/dashboard");
+
+        // O redirecionamento para '/dashboard' AGORA É FEITO DENTRO DO AuthContext.login.
       } else {
-        console.log("Login falhou");
-        toast({
-          title: "Falha no login",
-          description: "Verifique suas credenciais e tente novamente.",
-          variant: "destructive",
-        });
+        // A mensagem de erro específica já é tratada no AuthContext via toast.
+        // Aqui, apenas um console.log genérico, se necessário.
+        console.log("Login falhou - credenciais inválidas ou erro de rede.");
       }
     } catch (error) {
-      // Erro já tratado no contexto de autenticação
+      // Erros gerais já são tratados e exibidos como toast pelo AuthContext.
+      // Você pode adicionar um log mais específico aqui se precisar depurar erros não-HTTP.
+      console.error("Erro inesperado durante o processo de login:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Desativa o estado de carregamento local
     }
   };
 

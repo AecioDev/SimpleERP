@@ -2,8 +2,7 @@ import CreateCustomerTabs from "../components/CreateCustomerTabs";
 
 export default function CreateCustomerPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold">Cadastrar Cliente</h1>
+    <div className="p-6 max-w-5xl mx-auto">
       <CreateCustomerTabs />
     </div>
   );

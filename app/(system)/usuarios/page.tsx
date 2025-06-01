@@ -17,6 +17,13 @@ import RoleService, { type Role } from "@/services/role-service";
 import { UserTable } from "./components/user-table";
 import { AddUserDialog } from "./components/add-user-dialog";
 import { EditUserDialog } from "./components/edit-user-dialog";
+import { useRequirePermission } from "@/hooks/use-require-permission";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+
+const PAGE_PERMISSIONS = {
+  requiredPermissions: ["users.view"],
+  accessDeniedMessage: "Você não tem permissão para visualizar usuários.",
+};
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -26,16 +33,16 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+  const { hasPermissionCheckCompleted } =
+    useRequirePermission(PAGE_PERMISSIONS);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
 
-  // Verificar se o usuário é admin
   useEffect(() => {
-    if (user?.role !== "ADMIN") {
-      router.push("/dashboard");
+    if (hasPermissionCheckCompleted) {
+      setIsLoadingContent(false);
     }
-  }, [user, router]);
+  }, [hasPermissionCheckCompleted]);
 
   // Carregar usuários e perfis
   useEffect(() => {
@@ -79,10 +86,11 @@ export default function UsersPage() {
     setUsers(users.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
   };
 
-  if (isLoading) {
+  //Enquanto a verificação de permissão não for concluída, mostra um loader
+  if (isLoadingContent || isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen items-center justify-center">
+        <LoadingSpinner message="Verificando permissões..." />
       </div>
     );
   }

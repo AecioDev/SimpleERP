@@ -1,4 +1,4 @@
-import axios from "axios"
+import axios from "axios";
 
 // Configuração base do axios
 const api = axios.create({
@@ -6,61 +6,47 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-})
-
-// Interceptor para adicionar o token JWT em todas as requisições
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+  withCredentials: true,
+});
 
 // Interceptor para tratar erros de resposta
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
+    const originalRequest = error.config;
 
     // Se o erro for 401 (Unauthorized) e não for uma tentativa de refresh
+    // A lógica de refresh agora dependerá do backend lendo o refresh_token do cookie.
+    // O frontend só precisa chamar o endpoint de refresh.
     if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
+      originalRequest._retry = true;
 
       try {
-        // Tentar renovar o token
-        const refreshToken = localStorage.getItem("refreshToken")
-        if (refreshToken) {
-          const response = await axios.post(`${api.defaults.baseURL}/auth/refresh-token`, {
-            refreshToken,
-          })
+        // Tentar renovar o token:
+        // O backend agora espera o refresh_token no cookie, não no corpo da requisição.
+        const response = await axios.post(
+          `${api.defaults.baseURL}/auth/refresh-token`,
+          {},
+          {
+            withCredentials: true, // Garante que o cookie refresh_token seja enviado
+          }
+        );
 
-          const { token, refreshToken: newRefreshToken } = response.data
-
-          localStorage.setItem("token", token)
-          localStorage.setItem("refreshToken", newRefreshToken)
-
-          // Reconfigurar o header e reenviar a requisição original
-          originalRequest.headers.Authorization = `Bearer ${token}`
-          return api(originalRequest)
-        }
+        // O backend agora define os novos tokens (access e refresh) como cookies HttpOnly.
+        // Reenviar a requisição original (o navegador enviará o novo access_token via cookie)
+        return api(originalRequest);
       } catch (refreshError) {
         // Se falhar o refresh, fazer logout
-        localStorage.removeItem("token")
-        localStorage.removeItem("refreshToken")
-        localStorage.removeItem("user")
-        window.location.href = "/login"
+        // Limpar apenas os dados do usuário que não são tokens (se existirem)
+        localStorage.removeItem("user_data");
+
+        // O backend já limpará os cookies no logout, mas podemos forçar um redirecionamento aqui.
+        window.location.href = "/login"; // Redirecionar para a página de login
       }
     }
 
-    return Promise.reject(error)
-  },
-)
+    return Promise.reject(error);
+  }
+);
 
-export default api
-
+export default api;

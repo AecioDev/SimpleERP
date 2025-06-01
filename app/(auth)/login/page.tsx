@@ -1,29 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { LoginForm } from "@/components/auth/login-form";
 import { Logo } from "@/components/ui/logo";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function LoginPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      router.replace("/dashboard");
-    }
-  }, [isLoading, user, router]);
+  const { isLoading } = useAuth(); // Mantém para exibir spinner e lidar com o estado inicial
 
   if (isLoading) {
-    return <Spinner fullScreen />;
+    return <Spinner fullScreen />; // Mostra spinner enquanto o AuthContext verifica o estado
   }
 
-  if (user) {
-    return null; // já está redirecionando
-  }
+  // Se isLoading é false e user é null, mostra o formulário de login
+  // Se user não é null (usuário logado), o middleware ou o redirecionamento do login já cuidou de tudo.
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-muted/40">

@@ -1,77 +1,46 @@
+// src/components/customers/customers-list.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
-import { Edit, Eye, MoreHorizontal, Trash2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import CustomerService, {
   type Customer,
 } from "@/services/customer/customer-service";
-import { DeleteCustomerDialog } from "src/components/customers/delete-customer-dialog";
+import { DeleteCustomerDialog } from "@/components/customers/delete-customer-dialog"; // Certifique-se do caminho correto
+import { useCustomersPagination } from "@/hooks/useCustomersPagination"; // Importa o novo hook
+import { CustomersTable } from "@/components/customers/customers-table"; // Importa o novo componente de tabela
+import { useToast } from "@/components/ui/use-toast";
 
 interface CustomersListProps {
   onEdit: (customer: Customer) => void;
 }
 
 export function CustomersList({ onEdit }: CustomersListProps) {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    customers,
+    isLoading,
+    currentPage,
+    totalPages,
+    searchName,
+    setSearchName,
+    searchDocument,
+    setSearchDocument,
+    handleSearch,
+    goToNextPage,
+    goToPreviousPage,
+    fetchCustomers, // Usado para recarregar após exclusão
+  } = useCustomersPagination();
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
-  const [searchName, setSearchName] = useState("");
-  const [searchDocument, setSearchDocument] = useState("");
-
   const { toast } = useToast();
-  const router = useRouter();
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        setIsLoading(true);
-        const filters: { name?: string; document?: string } = {};
-
-        if (searchName) filters.name = searchName;
-        if (searchDocument) filters.document = searchDocument;
-
-        const response = await CustomerService.getCustomers(
-          currentPage,
-          10,
-          filters
-        );
-        setCustomers(response.data);
-        setTotalPages(Math.ceil(response.pagination.totalPages / 10));
-      } catch (error) {
-        console.error("Erro ao carregar clientes:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar a lista de clientes.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCustomers();
-  }, [currentPage, searchName, searchDocument, toast]);
-
-  const handleSearch = () => setCurrentPage(1);
   const confirmDelete = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDeleteDialogOpen(true);
@@ -82,12 +51,11 @@ export function CustomersList({ onEdit }: CustomersListProps) {
 
     try {
       await CustomerService.deleteCustomer(selectedCustomer.id);
-      setCustomers(customers.filter((c) => c.id !== selectedCustomer.id));
-
       toast({
         title: "Cliente excluído",
         description: `O cliente foi excluído com sucesso`,
       });
+      fetchCustomers(); // Recarrega a lista após a exclusão
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -100,12 +68,6 @@ export function CustomersList({ onEdit }: CustomersListProps) {
       setSelectedCustomer(null);
     }
   };
-
-  const viewCustomerDetails = (id: number) => {
-    router.push(`/sales/customers/${id}`);
-  };
-
-  const renderCell = (value?: string | null) => value || "-";
 
   if (isLoading) {
     return (
@@ -144,99 +106,12 @@ export function CustomersList({ onEdit }: CustomersListProps) {
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="overflow-auto rounded-md border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50">
-            <tr className="text-left font-medium">
-              <th className="px-4 py-3">Nome</th>
-              <th className="px-4 py-3">Documento</th>
-              <th className="px-4 py-3">Telefone</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Cidade/UF</th>
-              <th className="px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-muted-foreground"
-                >
-                  Nenhum cliente encontrado
-                </td>
-              </tr>
-            ) : (
-              customers.map((customer) => {
-                const phone = customer.contacts
-                  ? customer.contacts.find((c) => c.type === "phone")?.contact
-                  : "-";
-                const email = customer.contacts
-                  ? customer.contacts.find((c) => c.type === "email")?.contact
-                  : "-";
-                const address = customer.addresses
-                  ? customer.addresses[0]
-                  : "-";
-                //const city =  address?.city ? address?.city.name || "-";
-                //const state = address?.city.state.name || "-";
-
-                return (
-                  <tr key={customer.id} className="border-b">
-                    <td className="px-4 py-3">{customer.first_name}</td>
-                    <td className="px-4 py-3">
-                      {customer.document_number ? (
-                        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                          {customer.person_type === "cpf" ? "CPF" : "CNPJ"}:{" "}
-                          {customer.document_number}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td className="px-4 py-3">{phone}</td>
-                    <td className="px-4 py-3">{email}</td>
-                    <td className="px-4 py-3">
-                      {/*city !== "-" && state !== "-" ? `${city}/${state}` : "-"*/}{" "}
-                      Cidade / UF
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => viewCustomerDetails(customer.id)}
-                          >
-                            <Eye className="mr-2 h-4 w-4" />
-                            Visualizar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onEdit(customer)}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => confirmDelete(customer)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Tabela de Clientes */}
+      <CustomersTable
+        customers={customers}
+        onEdit={onEdit}
+        onConfirmDelete={confirmDelete}
+      />
 
       {/* Paginação */}
       {totalPages > 1 && (
@@ -244,7 +119,7 @@ export function CustomersList({ onEdit }: CustomersListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={goToPreviousPage}
             disabled={currentPage === 1}
           >
             Anterior
@@ -255,9 +130,7 @@ export function CustomersList({ onEdit }: CustomersListProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
+            onClick={goToNextPage}
             disabled={currentPage === totalPages}
           >
             Próxima
