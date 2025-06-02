@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "./use-auth";
 import { useToast } from "@/components/ui/use-toast";
 
-interface RequirePermissionOptions {
+export interface RequirePermissionOptions {
   requiredPermissions?: string[];
   requiredRoles?: string[];
   redirectPath?: string;
@@ -25,47 +25,50 @@ export function useRequirePermission(options: RequirePermissionOptions) {
       return;
     }
 
-    let hasAccess = true;
-
+    // Caso 1: Usuário não está logado
     if (!user) {
-      hasAccess = false;
       toast({
         variant: "destructive",
-        title: "Acesso negado",
+        title: "Acesso Negado",
         description: "Você precisa estar logado para acessar esta página.",
       });
-    } else {
-      if (
-        options.requiredPermissions &&
-        options.requiredPermissions.length > 0
-      ) {
-        const userPermissions =
-          user.role?.permissions?.map((p) => p.name) || [];
-        hasAccess = options.requiredPermissions.some((perm) =>
-          userPermissions.includes(perm)
-        );
-      } else if (options.requiredRoles && options.requiredRoles.length > 0) {
-        const userRoleName = user.role?.name;
-        hasAccess = options.requiredRoles.includes(userRoleName || "");
-      }
+      const timer = setTimeout(() => {
+        router.replace("/login"); // Sempre para /login se não há usuário
+      }, 50); // O timeout é pequeno, mas a função logout() deveria ser mais rápida
+      return () => clearTimeout(timer); // Importante: previne setHasPermissionCheckCompleted(true)
     }
 
-    if (!hasAccess) {
+    // Caso 2: Usuário está logado, verificar permissões/roles
+    let hasRequiredPermissions = true;
+    if (options.requiredPermissions && options.requiredPermissions.length > 0) {
+      const userPermissions = user.role?.permissions?.map((p) => p.name) || [];
+      hasRequiredPermissions = options.requiredPermissions.some((perm) =>
+        userPermissions.includes(perm)
+      );
+    }
+
+    let hasRequiredRoles = true;
+    if (options.requiredRoles && options.requiredRoles.length > 0) {
+      const userRoleName = user.role?.name;
+      hasRequiredRoles = options.requiredRoles.includes(userRoleName || "");
+    }
+
+    // Se chegou aqui e alguma verificação (permissão OU role) falhou
+    if (!hasRequiredPermissions || !hasRequiredRoles) {
       toast({
         variant: "destructive",
-        title: "Acesso negado",
+        title: "Acesso Negado",
         description:
           options.accessDeniedMessage ||
-          "Você não tem permissão para acessar esta funcionalidade.", // Usar options diretamente
+          "Você não tem permissão para acessar esta funcionalidade.",
       });
-
       const timer = setTimeout(() => {
-        router.replace(options.redirectPath || "/dashboard"); // Usar options diretamente
+        router.replace(options.redirectPath || "/dashboard"); // Redireciona para o path definido ou /dashboard
       }, 50);
-
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timer); // Importante: previne setHasPermissionCheckCompleted(true)
     }
 
+    // Se passou por todas as verificações e o usuário está logado com acesso
     setHasPermissionCheckCompleted(true);
   }, [
     isLoading,

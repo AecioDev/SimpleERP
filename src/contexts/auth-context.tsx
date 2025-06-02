@@ -49,59 +49,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: user.id,
       name: user.name,
       username: user.username,
-      role: user.role, // <--- Isso agora passa o objeto Role completo
+      role: user.role,
       email: user.email,
     };
   }, []);
 
   useEffect(() => {
-    console.log("Current Pathname:", pathname);
-    console.log("Is Auth Route:", AUTH_ROUTES.includes(pathname));
+    //console.log("[EFFECT AuthProvider] Running. Pathname:", pathname,"Is Auth Route:", AUTH_ROUTES.includes(pathname));
 
-    // AQUI: Condicionar a execução do checkAuthStatus
-    // Não execute checkAuthStatus se a rota atual for uma rota de autenticação
     if (AUTH_ROUTES.includes(pathname)) {
-      setIsLoading(false); // Definir isLoading como false imediatamente para não travar a UI
-      setUser(null); // Garantir que o user esteja nulo nessas rotas
-      return; // Sair do useEffect
+      //console.log("[EFFECT AuthProvider] On auth route. Setting isLoading=false, user=null. Returning.");
+      setIsLoading(false);
+      setUser(null);
+      return;
     }
 
+    //console.log("[EFFECT AuthProvider] Not on auth route. Calling checkAuthStatus.");
     const checkAuthStatus = async () => {
+      //console.log("[checkAuthStatus] Starting. Setting isLoading=true.");
       setIsLoading(true);
       try {
         const storedUserData = AuthService.getStoredUser();
-        console.log("Dados do usuário armazenados:", storedUserData);
+        //console.log("Dados do usuário armazenados:", storedUserData);
 
         if (storedUserData) {
           setUser(mapUserToContext(storedUserData));
         }
 
         const isAuthenticated = await AuthService.checkSessionStatus();
-        console.log("Usuário autenticado:", isAuthenticated);
 
         if (isAuthenticated) {
-          console.log("Usuário autenticado, buscando dados do usuário...");
           const currentUserResponse = await AuthService.getCurrentUser();
-          console.log("Dados do usuário atual:", currentUserResponse);
           setUser(mapUserToContext(currentUserResponse.data.user));
         } else {
-          console.log("Usuário não autenticado, redirecionando para login...");
+          //console.log("[checkAuthStatus] Not authenticated. Current pathname:",pathname,". Calling AuthService.logout() and router.push('/login').");
           AuthService.logout();
           setUser(null);
-          router.push("/login");
+          if (pathname !== "/login") {
+            router.push("/login");
+          }
         }
       } catch (error) {
-        console.error("Erro ao verificar autenticação com o backend:", error);
+        console.error(
+          "[checkAuthStatus] Error. Current pathname:",
+          pathname,
+          ". Calling AuthService.logout() and router.push('/login').",
+          error
+        );
         AuthService.logout();
         setUser(null);
-        router.push("/login");
+        if (pathname !== "/login") {
+          router.push("/login");
+        }
       } finally {
+        //console.log("[checkAuthStatus] Finished. Setting isLoading=false.");
         setIsLoading(false);
       }
     };
 
     checkAuthStatus();
-  }, [mapUserToContext, pathname]); // MUDANÇA IMPORTANTE: Removido router e AUTH_ROUTES
+  }, [mapUserToContext, pathname]);
 
   const login = async (
     username: string,
@@ -110,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await AuthService.login({ username, password });
-      console.log("Resposta do login:", response);
+      //console.log("Resposta do login:", response);
 
       setUser(mapUserToContext(response.data.user));
       router.push("/dashboard");
@@ -122,6 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Erro ao fazer login",
         description: error.response?.data?.message || "Credenciais inválidas",
       });
+
       return false;
     } finally {
       setIsLoading(false);
@@ -132,9 +140,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AuthService.logout();
       setUser(null);
-      router.push("/login");
+      router.replace("/login");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro no Logout",
+        description: "Não foi possível finalizar sua sessão.",
+      });
     }
   };
 

@@ -1,4 +1,7 @@
 import axios from "axios";
+// Se você tiver acesso ao router do Next.js aqui (pode ser complexo,
+// geralmente o router é um hook), seria ideal. Caso contrário, usaremos window.location.pathname.
+// import router from 'next/router'; // Exemplo, não funcionará diretamente aqui
 
 // Configuração base do axios
 const api = axios.create({
@@ -14,37 +17,57 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const loginUrlPath = "/auth/login"; // Caminho da sua API de login
+    // Ajuste se o AuthService.login usa um caminho diferente
 
-    // Se o erro for 401 (Unauthorized) e não for uma tentativa de refresh
-    // A lógica de refresh agora dependerá do backend lendo o refresh_token do cookie.
-    // O frontend só precisa chamar o endpoint de refresh.
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Verifica se a URL original é a de login.
+    // originalRequest.url pode ser o caminho relativo à baseURL.
+    const isLoginAttempt = originalRequest.url?.split("?")[0] === loginUrlPath;
+
+    // Se o erro for 401, não for uma tentativa de retry, E NÃO FOR UMA TENTATIVA DE LOGIN ORIGINAL
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isLoginAttempt
+    ) {
       originalRequest._retry = true;
 
       try {
-        // Tentar renovar o token:
-        // O backend agora espera o refresh_token no cookie, não no corpo da requisição.
-        const response = await axios.post(
+        console.log(
+          "[Interceptor] Tentando refresh token para:",
+          originalRequest.url
+        );
+        await axios.post(
           `${api.defaults.baseURL}/auth/refresh-token`,
           {},
           {
-            withCredentials: true, // Garante que o cookie refresh_token seja enviado
+            withCredentials: true,
           }
         );
-
-        // O backend agora define os novos tokens (access e refresh) como cookies HttpOnly.
-        // Reenviar a requisição original (o navegador enviará o novo access_token via cookie)
+        // Reenviar a requisição original
         return api(originalRequest);
       } catch (refreshError) {
-        // Se falhar o refresh, fazer logout
-        // Limpar apenas os dados do usuário que não são tokens (se existirem)
+        console.error(
+          "[Interceptor] Falha ao tentar refresh token. Efetuando logout e redirecionando se necessário.",
+          refreshError
+        );
+        // Limpar dados do usuário
         localStorage.removeItem("user_data");
-
-        // O backend já limpará os cookies no logout, mas podemos forçar um redirecionamento aqui.
-        window.location.href = "/login"; // Redirecionar para a página de login
+        // Aqui, o ideal seria chamar uma função centralizada de logout que usa o router do Next.js.
+        // Como alternativa, podemos usar window.location.href condicionalmente.
+        // Verifique se a página atual JÁ NÃO É /login para evitar reload desnecessário.
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/login"
+        ) {
+          window.location.href = "/login";
+        }
+        // Se já estiver em /login, não faz nada, o toast do AuthContext já foi exibido.
+        return Promise.reject(refreshError); // Importante rejeitar para que a chamada original saiba da falha.
       }
     }
 
+    // Se for uma tentativa de login que falhou, ou outro erro, apenas rejeita.
     return Promise.reject(error);
   }
 );

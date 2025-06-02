@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth"; // Seu hook de autenticação
-import { Spinner } from "@/components/ui/spinner"; // Opcional: para exibir enquanto redireciona
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function DashboardIndexPage() {
   const { user, isLoading } = useAuth();
@@ -19,13 +19,19 @@ export default function DashboardIndexPage() {
         case "ADMIN":
           router.replace("/dashboard/admin");
           break;
-        case "GERENTE": // Assumindo que o nome da role é 'GERENTE' no backend
-          router.replace("/dashboard/manager");
-          break;
-        case "FINANCEIRO": // Assumindo que o nome da role é 'FINANCEIRO' no backend
+        case "FINANCEIRO":
           router.replace("/dashboard/finance");
           break;
-        case "VENDAS": // Assumindo que o nome da role é 'VENDAS' no backend
+        case "ESTOQUE":
+          router.replace("/dashboard/inventory");
+          break;
+        case "GERENTE":
+          router.replace("/dashboard/manager");
+          break;
+        case "COMPRAS":
+          router.replace("/dashboard/purchases");
+          break;
+        case "VENDAS":
           router.replace("/dashboard/sales");
           break;
         default:
@@ -39,15 +45,16 @@ export default function DashboardIndexPage() {
   // Exibir um spinner enquanto o redirecionamento acontece
   // Ou um componente de carregamento simples.
   if (isLoading) {
-    return <Spinner fullScreen />;
+    <div className="flex h-screen items-center justify-center">
+      <LoadingSpinner message="Carregando..." />
+    </div>;
   }
 
   // Se o usuário está presente mas ainda não redirecionou (por algum atraso),
   // ou se não há role correspondente, podemos exibir algo temporário ou null.
   return (
-    <div className="flex items-center justify-center h-full">
-      <Spinner />
-      <p className="ml-2 text-lg">Redirecionando para o seu dashboard...</p>
+    <div className="flex h-screen items-center justify-center">
+      <LoadingSpinner message="Redirecionando para o seu dashboard..." />
     </div>
   );
 }

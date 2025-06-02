@@ -7,42 +7,24 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
 
 export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const { toast } = useToast();
+  const { login, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      const success = await login(username, password);
+    const success = await login(username, password);
 
-      if (success) {
-        console.log("Login realizado com sucesso");
-        toast({
-          title: "Login realizado com sucesso",
-          description: "Você será redirecionado para o dashboard",
-        });
-
-        // O redirecionamento para '/dashboard' AGORA É FEITO DENTRO DO AuthContext.login.
-      } else {
-        // A mensagem de erro específica já é tratada no AuthContext via toast.
-        // Aqui, apenas um console.log genérico, se necessário.
-        console.log("Login falhou - credenciais inválidas ou erro de rede.");
-      }
-    } catch (error) {
-      // Erros gerais já são tratados e exibidos como toast pelo AuthContext.
-      // Você pode adicionar um log mais específico aqui se precisar depurar erros não-HTTP.
-      console.error("Erro inesperado durante o processo de login:", error);
-    } finally {
-      setIsLoading(false); // Desativa o estado de carregamento local
+    if (success) {
+      console.log("[Form] - Login realizado com sucesso");
+    } else {
+      console.log(
+        "[Form] - Login falhou - credenciais inválidas ou erro de rede."
+      );
     }
   };
 
@@ -72,8 +54,8 @@ export function LoginForm() {
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Entrando...
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+            {"Validando Credenciais..."}
           </>
         ) : (
           "Entrar"
