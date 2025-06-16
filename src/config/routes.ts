@@ -54,12 +54,6 @@ export const routes = {
     view: (id: string | number) => `/suppliers/${id}`,
     edit: (id: string | number) => `/suppliers/${id}/edit`,
   },
-  users: {
-    root: "/users",
-    create: "/users/create",
-    view: (id: string | number) => `/users/${id}`,
-    edit: (id: string | number) => `/users/${id}/edit`,
-  },
 
   // --- MÓDULOS FUNCIONAIS (com suas sub-rotas específicas) ---
   financial: {
@@ -117,5 +111,21 @@ export const routes = {
     },
     // Outras funcionalidades de vendas, como "Payment Plans" se voltarem para cá,
     // ou "Sales Reports", etc.
+  },
+  settings: {
+    root: "/settings", // Uma página de configurações geral, se tiver
+    permissions: {
+      root: "/settings/permissions",
+      create: "/settings/permissions/create",
+      view: (id: string | number) => `/settings/permissions/${id}`,
+      edit: (id: string | number) => `/settings/permissions/${id}/edit`,
+    },
+    roles: "/settings/roles", // Para a atribuição de permissões a roles (admin)
+    users: {
+      root: "/settings/users",
+      create: "/settings/users/create",
+      view: (id: string | number) => `/settings/users/${id}`,
+      edit: (id: string | number) => `/settings/users/${id}/edit`,
+    },
   },
 };

@@ -11,10 +11,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ChevronDown, ChevronRight } from "lucide-react";
+// MUDANÇA 1: Remover imports de lucide-react para ícones de seta
+// import { ChevronDown, ChevronRight } from "lucide-react";
 
-// MUDANÇA 1: Importar a interface NavItem do navigation.ts
-// É crucial que esta interface esteja sincronizada com config/navigation.ts
+// MUDANÇA 2: Importar o componente Icon do Iconify
+import { Icon } from "@iconify/react";
+
+// MUDANÇA 3: Importar a interface NavItem do navigation.ts (já está correto)
 import { NavItem } from "@/config/navigation";
 
 interface SidebarItemProps {
@@ -44,35 +47,33 @@ export function SidebarItem({
     if (collapsed) {
       return (
         <li key={item.title}>
-          {" "}
-          {/* Adiciona um li para a lista */}
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
-              {/* Botão principal para o Popover quando colapsado */}
               <Button
                 variant={
                   isActive(item.href) || popoverOpen ? "secondary" : "ghost"
-                } // Ativar se o próprio item for ativo ou popover estiver aberto
-                className="w-full justify-center px-0" // Centraliza o ícone
+                }
+                className="w-full justify-center px-0"
               >
-                {item.icon && <item.icon className="h-5 w-5 mx-auto" />}
-                <span className="sr-only">{item.title}</span>{" "}
-                {/* Texto para acessibilidade */}
+                {/* MUDANÇA 4: Usar componente Icon do Iconify para o ícone principal */}
+                {item.icon && (
+                  <Icon icon={item.icon} className="h-5 w-5 mx-auto" />
+                )}
+                <span className="sr-only">{item.title}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent
               side="right"
-              align="start" // Alinha ao início para evitar sobreposição
+              align="start"
               className="w-48 p-2"
-              onMouseLeave={() => setPopoverOpen(false)} // Fecha ao sair do popover
+              onMouseLeave={() => setPopoverOpen(false)}
             >
-              {/* MUDANÇA CRUCIAL AQUI: Recursividade para filhos */}
               {item.children.map((childItem) => (
                 <SidebarItem
                   key={childItem.title}
                   item={childItem}
-                  collapsed={false} // Filhos não são colapsados dentro do popover
-                  // level={level + 1} // Opcional
+                  collapsed={false}
+                  // level={level + 1}
                 />
               ))}
             </PopoverContent>
@@ -84,35 +85,37 @@ export function SidebarItem({
     else {
       return (
         <li key={item.title}>
-          {" "}
-          {/* Adiciona um li para a lista */}
           <Button
-            variant={isActive(item.href) || open ? "secondary" : "ghost"} // Ativar se o próprio item for ativo ou submenu estiver aberto
+            variant={isActive(item.href) || open ? "secondary" : "ghost"}
             onClick={toggleOpen}
-            className="w-full justify-start pr-2" // Ajusta padding para o ícone de seta
+            className="w-full justify-start pr-2"
           >
-            {item.icon && <item.icon className="h-5 w-5 mr-2" />}
+            {/* MUDANÇA 5: Usar componente Icon do Iconify para o ícone principal */}
+            {item.icon && <Icon icon={item.icon} className="h-5 w-5 mr-2" />}
             <span className="flex-1 text-left">{item.title}</span>
+            {/* MUDANÇA 6: Usar ícones MDI para as setas de expansão */}
             {open ? (
-              <ChevronDown className="ml-auto h-4 w-4 transition-transform rotate-180" />
+              <Icon
+                icon="mdi:chevron-up"
+                className="ml-auto h-4 w-4 transition-transform rotate-180"
+              /> // Seta para cima
             ) : (
-              <ChevronDown className="ml-auto h-4 w-4 transition-transform rotate-0" />
+              <Icon
+                icon="mdi:chevron-down"
+                className="ml-auto h-4 w-4 transition-transform rotate-0"
+              /> // Seta para baixo
             )}
           </Button>
-          {/* Renderiza os submenus se estiverem abertos */}
           {open && (
             <ul
               className={cn("mt-1 space-y-1", item.children ? "ml-4" : "ml-0")}
             >
-              {" "}
-              {/* Ajusta indentação */}
-              {/* MUDANÇA CRUCIAL AQUI: Recursividade para filhos */}
               {item.children.map((childItem) => (
                 <SidebarItem
                   key={childItem.title}
                   item={childItem}
-                  collapsed={false} // Submenus não são colapsados dentro do pai expandido
-                  // level={level + 1} // Opcional
+                  collapsed={false}
+                  // level={level + 1}
                 />
               ))}
             </ul>
@@ -123,22 +126,21 @@ export function SidebarItem({
   }
 
   // Se o item NÃO tem filhos, ele é um item de menu folha (final)
-  // Adiciona um li para a lista
   return (
     <li key={item.title}>
       <Link href={item.href || "#"}>
-        {" "}
-        {/* Use "#" ou rota de fallback se href for opcional */}
         <Button
           variant={isActive(item.href) ? "secondary" : "ghost"}
           className={cn(
             "w-full justify-start",
-            collapsed ? "px-0 justify-center" : "pl-2" // Ajuste o padding para o Link/Botão final
-            // level > 0 && !collapsed && `pl-${level * 4}` // Opcional: para indentação baseada no nível
+            collapsed ? "px-0 justify-center" : "pl-2"
+            // level > 0 && !collapsed && `pl-${level * 4}`
           )}
         >
+          {/* MUDANÇA 7: Usar componente Icon do Iconify para o ícone principal */}
           {item.icon && (
-            <item.icon
+            <Icon
+              icon={item.icon}
               className={cn("h-5 w-5", collapsed ? "mx-auto" : "mr-2")}
             />
           )}

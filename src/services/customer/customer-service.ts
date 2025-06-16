@@ -1,9 +1,9 @@
-import api from "../api";
+import api from "../common/api";
 import { Address } from "../common/address-service";
 import { Contact } from "../common/contacts";
-import { Pagination } from "../pagination-service";
-import { User } from "../user-service";
+import { Pagination } from "../common/pagination-service";
 import { z } from "zod";
+import { User } from "../auth/user-schema";
 
 export interface Customer {
   id: number;

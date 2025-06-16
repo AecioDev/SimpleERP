@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import UserService, { type User } from "@/services/user-service";
-import type { Role } from "@/services/role-service";
+import { Role } from "@/services/auth/role-schema";
+import { User } from "@/services/auth/user-schema";
+import UserService from "@/services/auth/user-service";
 
 interface EditUserDialogProps {
   isOpen: boolean;

@@ -1,5 +1,5 @@
-import api from "./api";
-import { User } from "./user-service";
+import api from "../common/api";
+import { User } from "./user-schema";
 
 export interface LoginCredentials {
   username: string;

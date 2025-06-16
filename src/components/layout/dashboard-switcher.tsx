@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Permission } from "@/services/role-service"; // Sua tipagem de Permission
+import { Permission } from "@/services/auth/role-service"; // Sua tipagem de Permission
 
 export function DashboardSwitcher() {
   const { user, isLoading: isLoadingUser } = useAuth();

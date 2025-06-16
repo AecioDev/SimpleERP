@@ -1,28 +1,10 @@
 // src/config/navigation.ts
-import {
-  Users,
-  ShoppingCart,
-  Package,
-  Wallet,
-  Home,
-  Archive, // Exemplo para Estoque/Inventory Setup
-  Truck, // Exemplo para Fornecedores/Suppliers
-  Briefcase, // Exemplo para Compras/Purchases ou Gerencial
-  Settings, // Exemplo para Configurações ou Setup geral
-  ClipboardList, // Exemplo para Pedidos/Ordens
-  ArrowRightLeft, // Exemplo para Movimentações de Estoque
-  ArrowDownToLine, // Exemplo para Entradas de Estoque
-  ArrowUpFromLine, // Exemplo para Saídas de Estoque
-  SlidersHorizontal, // Exemplo para Ajustes de Estoque
-  Receipt, // Exemplo para Contas a Receber
-  Landmark, // Exemplo para Contas a Pagar
-} from "lucide-react";
-import { routes } from "./routes"; // Agora importa o routes.ts com chaves e caminhos em inglês
+import { routes } from "./routes";
 
 export interface NavItem {
   title: string;
   href?: string;
-  icon: React.ElementType;
+  icon: string; // O tipo do ícone é uma string para o nome do ícone do Iconify
   requiredRoles?: string[];
   requiredPermission?: string;
   children?: NavItem[];
@@ -30,30 +12,31 @@ export interface NavItem {
 
 export const systemNavItems: NavItem[] = [
   {
-    title: "Dashboard",
+    title: "Home",
     href: routes.dashboards.root,
-    icon: Home,
+    icon: "mdi:home", // Ícone MDI para Home
+    requiredPermission: "dashboard.view_default", // Adicionando permissão para o Dashboard padrão
   },
   {
     title: "Vendas",
-    icon: ShoppingCart,
-    requiredRoles: ["ADMIN", "VENDAS", "GERENTE"], // Use nomes de roles em inglês se padronizar
+    icon: "mdi:cart", // Ícone MDI para carrinho de compras
+    requiredRoles: ["ADMIN", "VENDAS", "GERENTE"],
     children: [
       {
         title: "Pedidos",
         href: routes.sales.orders.root,
-        icon: ClipboardList,
-        // requiredPermission: "orders.view",
+        icon: "mdi:clipboard-list", // MDI para lista/clipboard
+        requiredPermission: "orders.view", // Descomentar e adicionar permissão
       },
       {
         title: "Cadastros",
-        icon: Settings,
+        icon: "mdi:cog", // MDI para engrenagem/settings
         children: [
           {
             title: "Clientes",
             href: routes.customers.root,
-            icon: Users,
-            // requiredPermission: "customers.view",
+            icon: "mdi:account-group", // MDI para grupo de usuários
+            requiredPermission: "customers.view", // Descomentar e adicionar permissão
           },
         ],
       },
@@ -61,24 +44,24 @@ export const systemNavItems: NavItem[] = [
   },
   {
     title: "Compras",
-    icon: Briefcase,
+    icon: "mdi:briefcase", // MDI para pasta/maleta
     requiredRoles: ["ADMIN", "COMPRAS", "GERENTE"],
     children: [
       {
         title: "Pedidos de Compras",
         href: routes.purchases.orders.root,
-        icon: ClipboardList,
-        // requiredPermission: "purchase_orders.view",
+        icon: "mdi:clipboard-list",
+        requiredPermission: "purchase_orders.view", // Descomentar e adicionar permissão
       },
       {
         title: "Cadastros",
-        icon: Settings,
+        icon: "mdi:cog",
         children: [
           {
             title: "Fornecedores",
             href: routes.suppliers.root,
-            icon: Truck,
-            // requiredPermission: "suppliers.view",
+            icon: "mdi:truck",
+            requiredPermission: "suppliers.view", // Descomentar e adicionar permissão
           },
         ],
       },
@@ -86,57 +69,54 @@ export const systemNavItems: NavItem[] = [
   },
   {
     title: "Estoque",
-    icon: Package,
+    icon: "mdi:package-variant", // MDI para pacote
     requiredRoles: ["ADMIN", "ESTOQUE", "GERENTE"],
     children: [
       {
         title: "Produtos",
-        href: routes.products.root, // Link para a entidade central de Produtos
-        icon: Archive,
-        // requiredPermission: "products.view",
+        href: routes.products.root,
+        icon: "mdi:archive", // MDI para arquivo/caixa
+        requiredPermission: "products.view", // Descomentar e adicionar permissão
       },
       {
-        title: "Movimentação", // Anteriormente "Movimentação" - agora é um item pai
-        icon: ArrowRightLeft, // Ícone para o grupo de movimentações
-        // href: routes.inventory.movements.root, // Opcional: se /inventory/movements for uma página clicável
-        // // requiredPermission: "inventory.movements.view_all", // Permissão para ver a visão geral ou o grupo
+        title: "Movimentação",
+        icon: "mdi:swap-horizontal", // MDI para troca/movimentação
         children: [
-          // Sub-itens para os tipos de movimentação
           {
             title: "Notas de Entrada",
             href: routes.inventory.movements.inbound,
-            icon: ArrowDownToLine,
-            // requiredPermission: "inventory.movements.inbound.view", // Exemplo de permissão
+            icon: "mdi:arrow-down-box", // MDI para seta para baixo em caixa
+            requiredPermission: "inventory.movements.inbound.view",
           },
           {
             title: "Notas de Saídas",
             href: routes.inventory.movements.outbound,
-            icon: ArrowUpFromLine,
-            // requiredPermission: "inventory.movements.outbound.view",
+            icon: "mdi:arrow-up-box", // MDI para seta para cima em caixa
+            requiredPermission: "inventory.movements.outbound.view",
           },
           {
             title: "Ajuste de Estoque",
             href: routes.inventory.movements.adjustments,
-            icon: SlidersHorizontal,
-            // requiredPermission: "inventory.movements.adjustments.view",
+            icon: "mdi:tune-variant", // MDI para ajuste
+            requiredPermission: "inventory.movements.adjustments.view",
           },
         ],
       },
       {
         title: "Níveis de Estoque",
         href: routes.inventory.stockLevels,
-        icon: Package,
-        // requiredPermission: "inventory.stock_levels.view",
+        icon: "mdi:package-variant-closed", // MDI para pacote fechado
+        requiredPermission: "inventory.stock_levels.view",
       },
       {
         title: "Cadastro",
-        icon: Settings,
+        icon: "mdi:cog",
         children: [
           {
             title: "Locations",
             href: routes.inventory.setup.locations,
-            icon: Archive,
-            // requiredPermission: "stock_locations.view",
+            icon: "mdi:map-marker", // MDI para localização
+            requiredPermission: "inventory.setup.locations.view", // Permissão específica
           },
         ],
       },
@@ -144,79 +124,69 @@ export const systemNavItems: NavItem[] = [
   },
   {
     title: "Financeiro",
-    icon: Wallet,
+    icon: "mdi:wallet", // MDI para carteira
     requiredRoles: ["ADMIN", "FINANCEIRO", "GERENTE"],
     children: [
       {
         title: "Dashboard Financeiro",
         href: routes.dashboards.financial,
-        icon: Home,
-        // requiredPermission: "dashboard.financial.view",
+        icon: "mdi:view-dashboard", // MDI para dashboard
+        requiredPermission: "dashboard.financial.view",
       },
       {
         title: "Contas a Receber",
         href: routes.financial.accountsReceivable,
-        icon: Receipt,
-        // requiredPermission: "financial.accounts_receivable.view_module",
+        icon: "mdi:receipt-text", // MDI para recibo/conta
+        requiredPermission: "financial.accounts_receivable.view", // Permissão para o módulo
         children: [
           {
             title: "Clientes",
             href: routes.customers.root,
-            icon: Users,
-            // requiredPermission: "customers.view",
+            icon: "mdi:account-group",
+            requiredPermission: "customers.view",
           },
-          // Você pode adicionar outros itens específicos de Contas a Receber aqui, por exemplo:
-          // {
-          //   title: "Invoices",
-          //   href: routes.financial.accountsReceivable.invoices, // Supondo que essa rota exista
-          //   icon: ClipboardList,
-          //   // requiredPermission: "financial.invoices.view",
-          // },
-          // {
-          //   title: "Receipts / Boletos",
-          //   href: routes.financial.accountsReceivable.boletos, // Usando a rota de boletos
-          //   icon: Receipt, // Ou um ícone específico para boletos
-          //   // requiredPermission: "financial.receipts.view",
-          // },
         ],
       },
       {
         title: "Contas a Pagar",
         href: routes.financial.accountsPayable,
-        icon: Landmark,
-        // requiredPermission: "financial.accounts_payable.view_module",
+        icon: "mdi:bank", // MDI para banco/instituição financeira
+        requiredPermission: "financial.accounts_payable.view", // Permissão para o módulo
         children: [
           {
             title: "Fornecedores",
             href: routes.suppliers.root,
-            icon: Truck,
-            // requiredPermission: "suppliers.view",
+            icon: "mdi:truck",
+            requiredPermission: "suppliers.view",
           },
-          // Você pode adicionar outros itens específicos de Contas a Pagar aqui, por exemplo:
-          // {
-          //   title: "Bills",
-          //   href: routes.financial.accountsPayable.bills, // Supondo que essa rota exista
-          //   icon: ClipboardList,
-          //   // requiredPermission: "financial.bills.view",
-          // },
         ],
       },
-      // O link direto para "Customers" que existia antes sob "Financial" foi removido,
-      // pois agora está aninhado dentro de "Accounts Receivable".
-      // Você pode adicionar outras seções principais do financeiro aqui, como:
-      // {
-      //   title: "Cash Flow",
-      //   href: routes.financial.cashFlow, // Supondo que essa rota exista
-      //   icon: BarChart3, // Exemplo
-      //   // requiredPermission: "financial.cashflow.view",
-      // },
     ],
   },
   {
-    title: "Users", // Usuários
-    href: routes.users.root,
-    icon: Users,
+    title: "Configurações",
+    icon: "mdi:cog-box", // MDI para caixa de configurações
     requiredRoles: ["ADMIN"],
+    children: [
+      {
+        title: "Usuários",
+        href: routes.settings.users.root,
+        icon: "mdi:account-circle", // MDI para perfil de usuário
+        requiredPermission: "users.view",
+      },
+      {
+        title: "Permissões",
+        href: routes.settings.permissions.root,
+        icon: "mdi:lock", // MDI para cadeado
+        requiredPermission: "admin.create_permissions",
+      },
+      {
+        title: "Perfis de Acesso",
+        href: routes.settings.roles,
+        icon: "mdi:shield-account", // MDI para perfil de segurança
+        requiredPermission: "roles.view",
+      },
+    ],
   },
 ];
 
@@ -224,43 +194,43 @@ export const systemNavItems: NavItem[] = [
 export interface DashboardOption {
   title: string;
   href: string;
-  // requiredPermission: string;
+  requiredPermission?: string; // Mantido como opcional
 }
 
 export const dashboardOptions: DashboardOption[] = [
   {
-    title: "My Dashboard", // Meu Dashboard
-    href: routes.dashboards.general, // Aponta para o dashboard geral/padrão
-    // requiredPermission: "dashboard.view_default", // Ou dashboard.general.view
+    title: "Meu Dashboard",
+    href: routes.dashboards.general,
+    requiredPermission: "dashboard.view_default",
   },
   {
-    title: "Admin Dashboard",
+    title: "Dashboard Admin",
     href: routes.dashboards.admin,
-    // requiredPermission: "dashboard.admin.view",
+    requiredPermission: "dashboard.admin.view",
   },
   {
-    title: "Purchase Dashboard", // Dashboard Compras
+    title: "Dashboard Compras",
     href: routes.dashboards.purchase,
-    // requiredPermission: "dashboard.purchase.view", // Ajustado para purchase
+    requiredPermission: "dashboard.purchase.view",
   },
   {
-    title: "Inventory Dashboard", // Dashboard Estoque
+    title: "Dashboard Estoque",
     href: routes.dashboards.inventory,
-    // requiredPermission: "dashboard.inventory.view",
+    requiredPermission: "dashboard.inventory.view",
   },
   {
-    title: "Sales Dashboard", // Dashboard Vendas
+    title: "Dashboard Vendas",
     href: routes.dashboards.sales,
-    // requiredPermission: "dashboard.sales.view",
+    requiredPermission: "dashboard.sales.view",
   },
   {
-    title: "Financial Dashboard", // Dashboard Financeiro
+    title: "Dashboard Financeiro",
     href: routes.dashboards.financial,
-    // requiredPermission: "dashboard.financial.view", // Ajustado para financial
+    requiredPermission: "dashboard.financial.view",
   },
   {
-    title: "Manager Dashboard", // Dashboard Gerencial
+    title: "Dashboard Gerencial",
     href: routes.dashboards.manager,
-    // requiredPermission: "dashboard.manager.view",
+    requiredPermission: "dashboard.manager.view",
   },
 ];

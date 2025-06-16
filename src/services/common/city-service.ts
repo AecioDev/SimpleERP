@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./api";
 import { State } from "./state-service";
 
 export interface City {

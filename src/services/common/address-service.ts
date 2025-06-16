@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "./api";
 import { Customer } from "../customer/customer-service";
 import { Supplier } from "../supplier/supplier-service";
 import { City } from "./city-service";

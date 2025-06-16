@@ -11,16 +11,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import { type Customer } from "@/services/customer/customer-service";
+import { routes } from "@/config/routes";
 
 interface CustomersTableProps {
   customers: Customer[];
-  onEdit: (customer: Customer) => void;
   onConfirmDelete: (customer: Customer) => void;
 }
 
 export function CustomersTable({
   customers,
-  onEdit,
   onConfirmDelete,
 }: CustomersTableProps) {
   const router = useRouter();
@@ -29,6 +28,11 @@ export function CustomersTable({
     router.push(`/sales/customers/${id}`);
   };
 
+  const editCustomer = (id: number) => {
+    router.push(routes.customers.edit(id));
+  };
+
+  // Função utilitária para renderizar valores ou "-" se forem nulos/vazios
   const renderCell = (value?: string | null) => value || "-";
 
   return (
@@ -56,21 +60,26 @@ export function CustomersTable({
             </tr>
           ) : (
             customers.map((customer) => {
-              const phone = customer.contacts
-                ? customer.contacts.find((c) => c.type === "phone")?.contact
-                : "-";
-              const email = customer.contacts
-                ? customer.contacts.find((c) => c.type === "email")?.contact
-                : "-";
+              // Ajustando para usar renderCell
+              const phone = renderCell(
+                customer.contacts?.find((c) => c.type === "phone")?.contact
+              );
+              const email = renderCell(
+                customer.contacts?.find((c) => c.type === "email")?.contact
+              );
               const address = customer.addresses?.[0];
-              const cityState =
+              const cityState = renderCell(
                 address?.city && address?.city.state
-                  ? `${address.city.name}/${address.city.state.uf}` // Assumindo 'uf' para o estado
-                  : "-";
+                  ? `${address.city.name}/${address.city.state.uf}`
+                  : null
+              );
 
               return (
                 <tr key={customer.id} className="border-b">
-                  <td className="px-4 py-3">{customer.first_name}</td>
+                  {/* Usando renderCell para campos diretos também */}
+                  <td className="px-4 py-3">
+                    {renderCell(customer.first_name)}
+                  </td>
                   <td className="px-4 py-3">
                     {customer.document_number ? (
                       <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
@@ -100,7 +109,9 @@ export function CustomersTable({
                           <Eye className="mr-2 h-4 w-4" />
                           Visualizar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(customer)}>
+                        <DropdownMenuItem
+                          onClick={() => editCustomer(customer.id)}
+                        >
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>

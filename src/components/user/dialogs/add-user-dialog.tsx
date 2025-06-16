@@ -22,11 +22,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { UserPlus } from "lucide-react";
-import UserService, {
-  type User,
-  type CreateUserDto,
-} from "@/services/user-service";
-import type { Role } from "@/services/role-service";
+import { CreateUserDto, User } from "@/services/auth/user-schema";
+import { Role } from "@/services/auth/role-schema";
+import UserService from "@/services/auth/user-service";
 
 interface AddUserDialogProps {
   roles: Role[];

@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Edit, MoreHorizontal, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import type { User } from "@/services/user-service";
-import type { Role } from "@/services/role-service";
-import UserService from "@/services/user-service";
+import { User } from "@/services/auth/user-schema";
+import { Role } from "@/services/auth/role-schema";
+import UserService from "@/services/auth/user-service";
 
 interface UserTableProps {
   users: User[];

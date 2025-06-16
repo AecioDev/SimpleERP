@@ -11,7 +11,7 @@ import { Logo } from "@/components/ui/logo";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { systemNavItems, NavItem } from "@/config/navigation";
 import { SidebarItem } from "./sidebarItem";
-import { Permission } from "@/services/role-service";
+import { Permission } from "@/services/auth/permission-schema";
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -38,7 +38,7 @@ export function Sidebar() {
 
     const userRoleName = user.role.name;
     const userPermissions = user.role.permissions.map(
-      (p: Permission) => p.name
+      (p: Permission) => p.permission
     );
 
     const hasPermission = (permissionName: string): boolean => {

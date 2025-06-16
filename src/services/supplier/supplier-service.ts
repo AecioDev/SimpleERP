@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "../common/api";
 import { User } from "../user-service";
 
 export interface Supplier {

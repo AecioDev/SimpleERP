@@ -9,12 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import UserService, { type User } from "@/services/user-service";
-import RoleService, { type Role } from "@/services/role-service";
-import { UserTable } from "../../../src/components/user/tables/user-table";
-import { AddUserDialog } from "../../../src/components/user/dialogs/add-user-dialog";
-import { EditUserDialog } from "../../../src/components/user/dialogs/edit-user-dialog";
 import { PagePermissionGuard } from "@/components/layout/PagePermissionGuard";
+import { User } from "@/services/auth/user-schema";
+import { Role } from "@/services/auth/role-schema";
+import UserService from "@/services/auth/user-service";
+import RoleService from "@/services/auth/role-service";
+import { AddUserDialog } from "@/components/user/dialogs/add-user-dialog";
+import { UserTable } from "@/components/user/tables/user-table";
+import { EditUserDialog } from "@/components/user/dialogs/edit-user-dialog";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);

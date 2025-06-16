@@ -3,11 +3,11 @@
 import type React from "react";
 
 import { createContext, useState, useEffect, useCallback } from "react";
-import AuthService from "@/services/auth-service";
+import AuthService from "@/services/auth/auth-service";
 import { useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import { User } from "@/services/user-service";
-import { Role } from "@/services/role-service";
+import { User } from "@/services/auth/user-schema";
+import { Role } from "@/services/auth/role-schema";
 
 // Tipos para o contexto de autenticação
 export interface UserContext {

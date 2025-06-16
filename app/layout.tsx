@@ -4,6 +4,8 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { Toaster } from "@/components/ui/toaster";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
+import { HydrationGate } from "@/components/common/hydration-gate";
+
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -27,8 +29,10 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            {children}
-            <Toaster />
+            <HydrationGate>
+              {children}
+              <Toaster />
+            </HydrationGate>
           </AuthProvider>
         </ThemeProvider>
       </body>

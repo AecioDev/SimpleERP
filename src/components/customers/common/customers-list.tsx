@@ -15,11 +15,7 @@ import { useCustomersPagination } from "@/hooks/customers/use-customers-paginati
 import { CustomersTable } from "@/components/customers/tables/customers-table"; // Importa o novo componente de tabela
 import { useToast } from "@/components/ui/use-toast";
 
-interface CustomersListProps {
-  onEdit: (customer: Customer) => void;
-}
-
-export function CustomersList({ onEdit }: CustomersListProps) {
+export function CustomersList() {
   const {
     customers,
     isLoading,
@@ -107,11 +103,7 @@ export function CustomersList({ onEdit }: CustomersListProps) {
       </div>
 
       {/* Tabela de Clientes */}
-      <CustomersTable
-        customers={customers}
-        onEdit={onEdit}
-        onConfirmDelete={confirmDelete}
-      />
+      <CustomersTable customers={customers} onConfirmDelete={confirmDelete} />
 
       {/* Paginação */}
       {totalPages > 1 && (

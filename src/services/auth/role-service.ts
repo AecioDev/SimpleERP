@@ -1,27 +1,6 @@
-import api from "./api";
-
-export interface Permission {
-  id: number;
-  name: string;
-  description?: string;
-  module: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Role {
-  id: number;
-  name: string;
-  description?: string;
-  permissions?: Permission[];
-  created_at: string;
-  updated_at: string;
-}
-
-export interface RolePermission {
-  role_id: number;
-  permission_id: number;
-}
+import api from "../common/api";
+import { Permission } from "./permission-schema";
+import { Role } from "./role-schema";
 
 const RoleService = {
   async getRoles(): Promise<Role[]> {
@@ -52,16 +31,6 @@ const RoleService = {
 
   async deleteRole(id: number): Promise<void> {
     await api.delete(`/roles/${id}`);
-  },
-
-  async getPermissions(): Promise<Permission[]> {
-    const response = await api.get("/permissions");
-    return response.data;
-  },
-
-  async getPermissionsByModule(): Promise<Record<string, Permission[]>> {
-    const response = await api.get("/permissions/by-module");
-    return response.data;
   },
 
   async getRolePermissions(roleId: number): Promise<Permission[]> {
