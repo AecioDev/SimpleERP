@@ -1,8 +1,4 @@
-// app/(system)/settings/permissions/page.tsx
 "use client";
-
-// Removido useEffect, useState, Permission, useToast, permissionService,
-// handleConfirmDelete e loadPermissions pois agora são gerenciados por PermissionsList
 
 import {
   Card,

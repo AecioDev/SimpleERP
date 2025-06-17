@@ -34,13 +34,23 @@ export function DataTableRowActions({ actions }: DataTableRowActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 p-0 rounded-md hover:bg-accent focus:ring-2 focus:ring-primary"
+        >
           {/* Ícone de três pontos para o botão de trigger */}
-          <Icon icon="mdi:dots-horizontal" className="h-4 w-4" />
+          <Icon
+            icon="mdi:dots-horizontal"
+            className="h-4 w-4 text-muted-foreground"
+          />
           <span className="sr-only">Abrir menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
+      <DropdownMenuContent
+        align="end"
+        className="w-[180px] bg-popover text-popover-foreground shadow-lg border"
+      >
         <DropdownMenuLabel>Ações</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {actions.map((action, index) => (
@@ -49,9 +59,7 @@ export function DataTableRowActions({ actions }: DataTableRowActionsProps) {
           <DropdownMenuItem
             key={index}
             onClick={action.onClick}
-            className={
-              action.variant === "destructive" ? "text-destructive" : ""
-            }
+            className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent focus:bg-accent data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
           >
             {/* Renderiza o ícone do Iconify se fornecido */}
             {action.icon && (

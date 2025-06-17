@@ -28,7 +28,7 @@ const PermissionService = {
     params.append("limit", limit.toString());
 
     if (filters?.name) {
-      params.append("permissionName", filters.name);
+      params.append("name", filters.name);
     }
     if (filters?.module) {
       params.append("module", filters.module);
@@ -39,7 +39,23 @@ const PermissionService = {
 
     let url = `/permissions?${params.toString()}`;
     const response = await api.get(url);
-    return response.data.data;
+    // return response.data.data.data;
+
+    if (!response.data.success) {
+      const errorMessage =
+        response.data.error ||
+        response.data.message ||
+        "Erro desconhecido ao obter permissões.";
+      throw new Error(errorMessage);
+    }
+
+    const backendWrapper = response.data.data;
+
+    if (!backendWrapper || !backendWrapper.data || !backendWrapper.pagination) {
+      console.error("Dados ou paginação ausentes na resposta aninhada da API.");
+    }
+
+    return backendWrapper;
   },
 
   // Obtém uma permissão pelo ID

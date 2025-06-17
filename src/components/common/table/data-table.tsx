@@ -7,11 +7,8 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  getPaginationRowModel, // Para paginação
   getSortedRowModel, // Para ordenação
   SortingState, // Tipo para estado de ordenação
-  // Removido ColumnFiltersState e getFilteredRowModel,
-  // pois a filtragem é feita antes de passar os dados para a tabela
 } from "@tanstack/react-table";
 
 import {
@@ -21,35 +18,52 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"; // Seus componentes ShadCn de tabela
-import { Button } from "@/components/ui/button"; // Seu componente Button do ShadCn
-// Removido Input, pois o filtro de texto será externo
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/react/dist/iconify.js";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  // Removido filterColumnId e filterPlaceholder, pois a filtragem é externa
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+  onGoToFirstPage: () => void;
+  onGoToLastPage: () => void;
+  pageSize?: number;
+  // Opcional: onGoToPage?: (page: number) => void;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  currentPage,
+  totalPages,
+  totalItems,
+  onPreviousPage,
+  onNextPage,
+  onGoToFirstPage,
+  onGoToLastPage,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  // Removido columnFilters e setColumnFilters
-  // Removido getFilteredRowModel do useReactTable
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(), // Habilita paginação
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(), // Habilita ordenação
-    // Removido onColumnFiltersChange e getFilteredRowModel
+    manualPagination: true,
+    pageCount: totalPages,
     state: {
       sorting,
-      // Removido columnFilters
+      pagination: {
+        // TanStack Table ainda precisa de um estado de paginação, mesmo que manual
+        pageIndex: currentPage - 1, // pageIndex é 0-based, currentPage é 1-based
+        pageSize: data.length > 0 ? data.length : 10, // Tamanho da página atual (número de itens na página atual)
+      },
     },
   });
 
@@ -128,25 +142,56 @@ export function DataTable<TData, TValue>({
 
       {/* Componentes de Paginação */}
       <div className="flex items-center justify-end space-x-3 py-4 text-sm text-muted-foreground">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <span className="text-muted-foreground">
-          Página {table.getState().pagination.pageIndex + 1} de{" "}
-          {table.getPageCount()}
+        <span className="text-muted-foreground mr-auto">
+          {totalItems} registros encontrados
         </span>
+
+        {/* Botão de Primeira Página */}
         <Button
           variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
+          size="icon" // Usar size="icon" para botões com apenas ícones
+          onClick={onGoToFirstPage}
+          disabled={currentPage === 1}
         >
-          Próximo
+          <Icon icon="mdi:page-first" className="h-4 w-4" />{" "}
+          {/* Ícone para "Primeira Página" */}
+        </Button>
+
+        {/* Botão Anterior */}
+        <Button
+          variant="outline"
+          size="icon" // Usar size="icon"
+          onClick={onPreviousPage}
+          disabled={currentPage === 1}
+        >
+          <Icon icon="mdi:chevron-left" className="h-4 w-4" />{" "}
+          {/* Ícone para "Anterior" */}
+        </Button>
+
+        <span className="text-muted-foreground">
+          Página {currentPage} de {totalPages}
+        </span>
+
+        {/* Botão Próximo */}
+        <Button
+          variant="outline"
+          size="icon" // Usar size="icon"
+          onClick={onNextPage}
+          disabled={currentPage === totalPages}
+        >
+          <Icon icon="mdi:chevron-right" className="h-4 w-4" />{" "}
+          {/* Ícone para "Próximo" */}
+        </Button>
+
+        {/* Botão de Última Página */}
+        <Button
+          variant="outline"
+          size="icon" // Usar size="icon"
+          onClick={onGoToLastPage}
+          disabled={currentPage === totalPages}
+        >
+          <Icon icon="mdi:page-last" className="h-4 w-4" />{" "}
+          {/* Ícone para "Última Página" */}
         </Button>
       </div>
     </div>

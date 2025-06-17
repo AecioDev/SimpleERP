@@ -16,11 +16,25 @@ import {
 interface PermissionsTableProps {
   permissions: Permission[];
   onConfirmDelete: (permission: Permission) => void;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  onPreviousPage: () => void;
+  onNextPage: () => void;
+  onGoToFirstPage: () => void;
+  onGoToLastPage: () => void;
 }
 
 export function PermissionsTable({
   permissions,
   onConfirmDelete,
+  currentPage,
+  totalPages,
+  totalItems,
+  onPreviousPage,
+  onNextPage,
+  onGoToFirstPage,
+  onGoToLastPage,
 }: PermissionsTableProps) {
   const router = useRouter();
 
@@ -136,7 +150,17 @@ export function PermissionsTable({
   ];
 
   return (
-    // Renderiza o componente DataTable genérico
-    <DataTable columns={columns} data={permissions} />
+    // Renderiza o componente DataTable genérico, passando todas as props necessárias para a paginação
+    <DataTable
+      columns={columns}
+      data={permissions}
+      currentPage={currentPage}
+      totalPages={totalPages}
+      totalItems={totalItems}
+      onPreviousPage={onPreviousPage}
+      onNextPage={onNextPage}
+      onGoToFirstPage={onGoToFirstPage}
+      onGoToLastPage={onGoToLastPage}
+    />
   );
 }

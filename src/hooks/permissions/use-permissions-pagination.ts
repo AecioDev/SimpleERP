@@ -14,15 +14,18 @@ interface PermissionsPaginationResult {
   isLoading: boolean;
   currentPage: number;
   totalPages: number;
+  totalItems: number;
   searchName: string;
   setSearchName: (value: string) => void;
   searchModule: string;
   setSearchModule: (value: string) => void;
-  searchRoleId: string; // Novo estado para o filtro por Role ID
-  setSearchRoleId: (value: string) => void; // Setter para Role ID
+  searchRoleId: string;
+  setSearchRoleId: (value: string) => void;
   handleSearch: () => void;
   goToNextPage: () => void;
   goToPreviousPage: () => void;
+  goToFirstPage: () => void;
+  goToLastPage: () => void;
   goToPage: (page: number) => void;
   fetchPermissions: () => void;
 }
@@ -35,6 +38,7 @@ export function usePermissionsPagination({
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [searchName, setSearchName] = useState("");
   const [searchModule, setSearchModule] = useState("");
   const [searchRoleId, setSearchRoleId] = useState(""); // Estado para o filtro por Role ID
@@ -62,6 +66,7 @@ export function usePermissionsPagination({
 
       setPermissions(result.data);
       setTotalPages(result.pagination.totalPages);
+      setTotalItems(result.pagination.totalRows);
     } catch (error: any) {
       console.error("Erro ao carregar permissões:", error);
       toast({
@@ -72,6 +77,7 @@ export function usePermissionsPagination({
       });
       setPermissions([]);
       setTotalPages(1);
+      setTotalItems(0);
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +113,16 @@ export function usePermissionsPagination({
     setCurrentPage((prev) => Math.max(prev - 1, 1));
   };
 
+  const goToFirstPage = () => {
+    // NOVA FUNÇÃO
+    setCurrentPage(1);
+  };
+
+  const goToLastPage = () => {
+    // NOVA FUNÇÃO
+    setCurrentPage(totalPages);
+  };
+
   const goToPage = (page: number) => {
     setCurrentPage(page);
   };
@@ -116,6 +132,7 @@ export function usePermissionsPagination({
     isLoading,
     currentPage,
     totalPages,
+    totalItems,
     searchName,
     setSearchName,
     searchModule,
@@ -125,6 +142,8 @@ export function usePermissionsPagination({
     handleSearch,
     goToNextPage,
     goToPreviousPage,
+    goToFirstPage,
+    goToLastPage,
     goToPage,
     fetchPermissions: handleSearch, // Expondo handleSearch para recarregar com os filtros atuais
   };

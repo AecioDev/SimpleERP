@@ -27,17 +27,20 @@ export function PermissionsList() {
     isLoading,
     currentPage,
     totalPages,
+    totalItems,
     searchName,
     setSearchName,
     searchModule,
     setSearchModule,
-    searchRoleId, // Novo filtro por Role ID
-    setSearchRoleId, // Setter para Role ID
+    searchRoleId,
+    setSearchRoleId,
     handleSearch,
     goToNextPage,
     goToPreviousPage,
-    fetchPermissions, // Usado para recarregar após exclusão
-  } = usePermissionsPagination({ pageSize: 10 });
+    goToFirstPage,
+    goToLastPage,
+    fetchPermissions,
+  } = usePermissionsPagination({ pageSize: 5 });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [availableModules, setAvailableModules] = useState<string[]>([]);
@@ -93,13 +96,19 @@ export function PermissionsList() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-40 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex h-40 items-center justify-center">
+  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //     </div>
+  //   );
+  // }
+
+  // Calcular a altura mínima para o contêiner de loading/tabela para acomodar o pageSize
+  // Assumindo que a altura de uma linha da tabela é ~48px (h-12 na TableHead/TableCell)
+  const pageSize = 5; // Defina aqui o mesmo pageSize que você usa no hook
+  const minHeightPerItem = 48; // Altura de uma linha da tabela (aproximado, ajuste se necessário)
+  const calculatedMinHeight = pageSize * minHeightPerItem;
 
   return (
     <>
@@ -169,35 +178,27 @@ export function PermissionsList() {
         </div>
       </div>
 
-      {/* Tabela de Permissões */}
-      <PermissionsTable
-        permissions={permissions}
-        onConfirmDelete={confirmDelete}
-      />
-
-      {/* Paginação */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToPreviousPage}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            Página {currentPage} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goToNextPage}
-            disabled={currentPage === totalPages}
-          >
-            Próxima
-          </Button>
+      {/* Tabela de Permissões ou Loader */}
+      {isLoading ? (
+        <div
+          className="flex flex-col items-center justify-center text-muted-foreground border rounded-md"
+          style={{ minHeight: `${calculatedMinHeight + 120}px` }} // +60px para dar um pouco mais de espaço no loader
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+          <p>Consultando servidor...</p>
         </div>
+      ) : (
+        <PermissionsTable
+          permissions={permissions}
+          onConfirmDelete={confirmDelete}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          onPreviousPage={goToPreviousPage}
+          onNextPage={goToNextPage}
+          onGoToFirstPage={goToFirstPage}
+          onGoToLastPage={goToLastPage}
+        />
       )}
 
       {/* Diálogo de exclusão genérico */}
