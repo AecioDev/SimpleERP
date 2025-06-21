@@ -3,15 +3,20 @@
 
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Permission } from "@/services/auth/permission-schema"; // Certifique-se que o import está correto
+import { Permission } from "@/services/auth/permission-schema";
 import { routes } from "@/config/routes";
-import { DataTable } from "@/components/common/table/data-table"; // Importe seu novo componente DataTable
-import { Icon } from "@iconify/react"; // Para os ícones nos botões de ação do dropdown
+import { DataTable } from "@/components/common/table/data-table";
+import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import {
   DataTableRowActions,
   RowAction,
 } from "@/components/common/table/data-table-row-action";
+
+// IMPORTANTE: Importar o EditPermissionModal e o useState
+import { useState } from "react";
+import { EditPermissionModal } from "../dialogs/edit-permission-modal";
+import { ViewPermissionModal } from "../dialogs/view-permission-modal";
 
 interface PermissionsTableProps {
   permissions: Permission[];
@@ -23,6 +28,8 @@ interface PermissionsTableProps {
   onNextPage: () => void;
   onGoToFirstPage: () => void;
   onGoToLastPage: () => void;
+  // Nova prop: Função para recarregar os dados na lista pai após uma edição
+  onPermissionUpdated: () => void;
 }
 
 export function PermissionsTable({
@@ -35,26 +42,36 @@ export function PermissionsTable({
   onNextPage,
   onGoToFirstPage,
   onGoToLastPage,
+  onPermissionUpdated, // Nova prop
 }: PermissionsTableProps) {
   const router = useRouter();
 
-  const viewPermissionDetails = (id: number) => {
-    // Ajuste o caminho se a rota for diferente para visualizar uma permissão específica
-    router.push(`${routes.settings.permissions}/${id}`);
+  // Estados para o modal de edição
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingPermissionId, setEditingPermissionId] = useState<string | null>(
+    null
+  );
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingPermissionId, setViewingPermissionId] = useState<string | null>(
+    null
+  );
+
+  const viewPermissionDetails = (id: string) => {
+    setViewingPermissionId(id);
+    setIsViewModalOpen(true);
   };
 
-  const editPermission = (id: number) => {
-    // Ajuste o caminho se a rota for diferente para editar uma permissão específica
-    router.push(`${routes.settings.permissions}/${id}/edit`);
+  // Alteração aqui: Abrir o modal em vez de navegar para outra página
+  const handleEditPermission = (id: string) => {
+    setEditingPermissionId(id);
+    setIsEditModalOpen(true);
   };
 
   // 1. Defina as colunas para a sua tabela de permissões
   const columns: ColumnDef<Permission>[] = [
     {
-      accessorKey: "module", // Campo de dados no seu objeto Permission
-      header: (
-        { column } // Cabeçalho com ordenação
-      ) => (
+      accessorKey: "module",
+      header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={column.getToggleSortingHandler()}
@@ -74,7 +91,7 @@ export function PermissionsTable({
       cell: ({ row }) => row.original.module,
     },
     {
-      accessorKey: "permission", // Campo de dados
+      accessorKey: "permission",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -95,7 +112,7 @@ export function PermissionsTable({
       cell: ({ row }) => row.original.permission,
     },
     {
-      accessorKey: "description", // Campo de dados
+      accessorKey: "description",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -116,31 +133,31 @@ export function PermissionsTable({
       cell: ({ row }) => row.original.description,
     },
     {
-      id: "actions", // ID da coluna de ações
-      header: "Ações", // Cabeçalho
-      enableHiding: false, // Não permite esconder essa coluna
+      id: "actions",
+      header: "Ações",
+      enableHiding: false,
       cell: ({ row }) => {
-        const perm = row.original; // Obtém o objeto Permission da linha
+        const perm = row.original;
 
         const actions: RowAction[] = [
           {
             label: "Visualizar",
-            onClick: () => viewPermissionDetails(perm.ID),
+            onClick: () => viewPermissionDetails(perm.id),
             icon: "mdi:eye",
-            permission: "permissions.view", // Permissão para visualizar a permissão
+            permission: "permissions.view",
           },
           {
             label: "Editar",
-            onClick: () => editPermission(perm.ID),
+            onClick: () => handleEditPermission(perm.id),
             icon: "mdi:pencil",
-            permission: "permissions.edit", // Permissão para editar a permissão
+            permission: "permissions.edit",
           },
           {
             label: "Excluir",
             onClick: () => onConfirmDelete(perm),
             icon: "mdi:trash-can",
             variant: "destructive",
-            permission: "permissions.delete", // Permissão para excluir a permissão
+            permission: "permissions.delete",
           },
         ];
 
@@ -150,17 +167,45 @@ export function PermissionsTable({
   ];
 
   return (
-    // Renderiza o componente DataTable genérico, passando todas as props necessárias para a paginação
-    <DataTable
-      columns={columns}
-      data={permissions}
-      currentPage={currentPage}
-      totalPages={totalPages}
-      totalItems={totalItems}
-      onPreviousPage={onPreviousPage}
-      onNextPage={onNextPage}
-      onGoToFirstPage={onGoToFirstPage}
-      onGoToLastPage={onGoToLastPage}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={permissions}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        onPreviousPage={onPreviousPage}
+        onNextPage={onNextPage}
+        onGoToFirstPage={onGoToFirstPage}
+        onGoToLastPage={onGoToLastPage}
+      />
+
+      {isEditModalOpen && editingPermissionId && (
+        <EditPermissionModal
+          open={isEditModalOpen}
+          onOpenChange={(open) => {
+            setIsEditModalOpen(open);
+            if (!open) {
+              setEditingPermissionId(null); // Limpa o ID quando o modal fecha
+            }
+          }}
+          permissionId={editingPermissionId}
+          onSuccess={onPermissionUpdated} // <--- CHAMA O CALLBACK DA LISTA PAI PARA RECARREGAR
+        />
+      )}
+
+      {isViewModalOpen && viewingPermissionId && (
+        <ViewPermissionModal
+          open={isViewModalOpen}
+          onOpenChange={(open) => {
+            setIsViewModalOpen(open);
+            if (!open) {
+              setViewingPermissionId(null); // Limpa o ID quando o modal fecha
+            }
+          }}
+          permissionId={viewingPermissionId}
+        />
+      )}
+    </>
   );
 }

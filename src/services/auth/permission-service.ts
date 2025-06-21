@@ -1,9 +1,9 @@
 import api from "../common/api";
 import {
-  CreatePermissionDto,
+  CreatePermissionFormData,
   Permission,
   PermissionList,
-  UpdatePermissionDto,
+  UpdatePermissionFormData,
 } from "./permission-schema";
 
 const PermissionService = {
@@ -20,7 +20,7 @@ const PermissionService = {
     filters?: {
       name?: string;
       module?: string;
-      roleName?: string;
+      roleId?: string;
     }
   ): Promise<PermissionList> {
     const params = new URLSearchParams();
@@ -33,8 +33,8 @@ const PermissionService = {
     if (filters?.module) {
       params.append("module", filters.module);
     }
-    if (filters?.roleName) {
-      params.append("roleName", filters.roleName);
+    if (filters?.roleId) {
+      params.append("roleId", filters.roleId);
     }
 
     let url = `/permissions?${params.toString()}`;
@@ -59,15 +59,15 @@ const PermissionService = {
   },
 
   // Obtém uma permissão pelo ID
-  async getPermissionById(id: number): Promise<Permission> {
+  async getPermissionById(id: string): Promise<Permission> {
     const response = await api.get(`/permissions/${id}`);
-    return response.data;
+    return response.data.data;
   },
 
   // Obtem as permissões por módulo
   async getPermissionsByModule(): Promise<Record<string, Permission[]>> {
     const response = await api.get("/permissions/by-module");
-    return response.data;
+    return response.data.data;
   },
 
   // Obtem uma lista de modulos
@@ -77,22 +77,24 @@ const PermissionService = {
   },
 
   // Cria uma Permissão
-  async createPermission(permission: CreatePermissionDto): Promise<Permission> {
+  async createPermission(
+    permission: CreatePermissionFormData
+  ): Promise<Permission> {
     const response = await api.post("/permissions", permission);
     return response.data.data;
   },
 
   // Atualiza uma permissão
   async updatePermission(
-    id: number,
-    permission: UpdatePermissionDto
+    id: string,
+    data: UpdatePermissionFormData
   ): Promise<Permission> {
-    const response = await api.put(`/permissions/${id}`, permission);
+    const response = await api.put(`/permissions/${id}`, data);
     return response.data;
   },
 
   // Deleta uma Permissão
-  async deletePermission(id: number): Promise<void> {
+  async deletePermission(id: string): Promise<void> {
     await api.delete(`/permissions/${id}`);
   },
 };

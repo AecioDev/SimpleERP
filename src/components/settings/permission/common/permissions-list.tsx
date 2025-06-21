@@ -19,33 +19,28 @@ import { PermissionsTable } from "../tables/permissions-table";
 import { Role } from "@/services/auth/role-schema";
 import RoleService from "@/services/auth/role-service";
 import PermissionService from "@/services/auth/permission-service";
-import { usePermissionsPagination } from "@/hooks/permissions/use-permissions-pagination";
+import { useServerPagination } from "@/hooks/use-server-pagination";
 
 export function PermissionsList() {
+  const [searchName, setSearchName] = useState("");
+  const [searchModule, setSearchModule] = useState("");
+  const [searchRoleId, setSearchRoleId] = useState("");
+
   const {
-    permissions,
+    data: permissions, // Renomeie 'data' para 'permissions' para clareza na tela
     isLoading,
     currentPage,
     totalPages,
     totalItems,
-    searchName,
-    setSearchName,
-    searchModule,
-    setSearchModule,
-    searchRoleId,
-    setSearchRoleId,
-    handleSearch,
+    fetchDataWithFilters, // Função para buscar dados com filtros
     goToNextPage,
     goToPreviousPage,
     goToFirstPage,
     goToLastPage,
-    fetchPermissions,
-  } = usePermissionsPagination({ pageSize: 5 });
-
-  console.log("Estados na PermissionsList:", {
-    searchName,
-    searchModule,
-    searchRoleId,
+  } = useServerPagination<Permission>({
+    // Especifique o tipo da entidade aqui
+    fetchDataService: PermissionService.getPermissions, // <--- Passando a função específica
+    pageSize: 5,
   });
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -75,7 +70,42 @@ export function PermissionsList() {
   useEffect(() => {
     getModules();
     getRoles();
+    // A primeira busca é disparada pelo useEffect interno do useServerPagination
+    // que usa a fetchDataService injetada com os filtros iniciais (vazios neste caso).
   }, []);
+
+  const handleSearch = () => {
+    fetchDataWithFilters({
+      name: searchName,
+      module: searchModule,
+      roleId: searchRoleId,
+    });
+  };
+
+  const handleModuleChange = (value: string) => {
+    setSearchModule(value === "all" ? "" : value);
+    fetchDataWithFilters({
+      name: searchName,
+      module: value === "all" ? "" : value,
+      roleId: searchRoleId,
+    });
+  };
+
+  const handleRoleChange = (value: string) => {
+    setSearchRoleId(value === "all" ? "" : value);
+    fetchDataWithFilters({
+      name: searchName,
+      module: searchModule,
+      roleId: value === "all" ? "" : value,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchName("");
+    setSearchModule("all");
+    setSearchRoleId("all");
+    fetchDataWithFilters({ name: "", module: "", roleId: "" });
+  };
 
   const confirmDelete = (permission: Permission) => {
     setSelectedPermission(permission);
@@ -86,8 +116,16 @@ export function PermissionsList() {
     if (!selectedPermission) return;
 
     try {
-      await PermissionService.deletePermission(selectedPermission.ID);
-      fetchPermissions(); // Recarrega a lista após a exclusão
+      await PermissionService.deletePermission(selectedPermission.id);
+      // Recarrega a lista com os filtros atuais
+      fetchDataWithFilters(
+        {
+          name: searchName,
+          module: searchModule,
+          roleId: searchRoleId,
+        },
+        false
+      ); // Passa false para não resetar a página após exclusão (opcional)
     } catch (error: any) {
       // O toast já é exibido pelo service ou pelo hook de paginação
     } finally {
@@ -96,29 +134,24 @@ export function PermissionsList() {
     }
   };
 
-  const pageSize = 5; // Defina aqui o mesmo pageSize que você usa no hook
-  const minHeightPerItem = 48; // Altura de uma linha da tabela (aproximado, ajuste se necessário)
+  // Função que será passada para a tabela para recarregar os dados após uma edição
+  const handlePermissionUpdated = () => {
+    fetchDataWithFilters(
+      {
+        name: searchName,
+        module: searchModule === "all" ? "" : searchModule,
+        roleId: searchRoleId === "all" ? "" : searchRoleId,
+      },
+      false // Não reseta a página ao atualizar
+    );
+  };
+
+  const pageSize = 5;
+  const minHeightPerItem = 48;
   const calculatedMinHeight = pageSize * minHeightPerItem;
-
-  // Handler para mudança de Módulo: atualiza o estado e dispara a busca
-  const handleModuleChange = (value: string) => {
-    setSearchModule(value);
-    setTimeout(() => {
-      handleSearch();
-    }, 0);
-  };
-
-  // Handler para mudança de Role: atualiza o estado e dispara a busca
-  const handleRoleChange = (value: string) => {
-    setSearchRoleId(value);
-    setTimeout(() => {
-      handleSearch();
-    }, 0);
-  };
 
   return (
     <>
-      {/* Filtros */}
       <div className="mb-6 p-4 rounded-lg border bg-card shadow-sm grid grid-cols-1 gap-6 md:grid-cols-4">
         <div className="grid gap-2">
           <Label
@@ -152,7 +185,7 @@ export function PermissionsList() {
               <SelectValue placeholder="Selecione um módulo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="T">Todos os Módulos</SelectItem>
+              <SelectItem value="all">Todos os Módulos</SelectItem>
               {availableModules.map((module) => (
                 <SelectItem key={module} value={module}>
                   {module}
@@ -173,7 +206,7 @@ export function PermissionsList() {
               <SelectValue placeholder="Selecione um perfil" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="T">Todos os Perfis</SelectItem>{" "}
+              <SelectItem value="all">Todos os Perfis</SelectItem>
               {availableRoles.map((role) => (
                 <SelectItem key={role.id} value={role.id.toString()}>
                   {role.name}
@@ -182,25 +215,31 @@ export function PermissionsList() {
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-2">
           <Button onClick={handleSearch} className="mb-0.5">
             Buscar
+          </Button>
+          <Button
+            onClick={handleClearFilters}
+            variant="outline"
+            className="mb-0.5"
+          >
+            Limpar Filtros
           </Button>
         </div>
       </div>
 
-      {/* Tabela de Permissões ou Loader */}
       {isLoading ? (
         <div
           className="flex flex-col items-center justify-center text-muted-foreground border rounded-md"
-          style={{ minHeight: `${calculatedMinHeight + 120}px` }} // +60px para dar um pouco mais de espaço no loader
+          style={{ minHeight: `${calculatedMinHeight + 120}px` }}
         >
           <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
           <p>Consultando servidor...</p>
         </div>
       ) : (
         <PermissionsTable
-          permissions={permissions}
+          permissions={permissions} // Renomeado de 'data' para 'permissions'
           onConfirmDelete={confirmDelete}
           currentPage={currentPage}
           totalPages={totalPages}
@@ -209,10 +248,10 @@ export function PermissionsList() {
           onNextPage={goToNextPage}
           onGoToFirstPage={goToFirstPage}
           onGoToLastPage={goToLastPage}
+          onPermissionUpdated={handlePermissionUpdated}
         />
       )}
 
-      {/* Diálogo de exclusão genérico */}
       {isDeleteDialogOpen && (
         <ConfirmDeleteDialog
           open={isDeleteDialogOpen}
