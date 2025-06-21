@@ -2,7 +2,7 @@
 setlocal
 
 :: Caminho absoluto ou relativo da pasta do backend
-set "BACKEND_DIR=D:\Programacao\Pessoais\2025\SimpleERP\SimpleERPService"
+set "BACKEND_DIR=D:\Projetos\SimpleERPService"
 
 :: Muda para a pasta do backend
 cd /d "%BACKEND_DIR%"

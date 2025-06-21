@@ -79,7 +79,7 @@ const PermissionService = {
   // Cria uma Permissão
   async createPermission(permission: CreatePermissionDto): Promise<Permission> {
     const response = await api.post("/permissions", permission);
-    return response.data;
+    return response.data.data;
   },
 
   // Atualiza uma permissão

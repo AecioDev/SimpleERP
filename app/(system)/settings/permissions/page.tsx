@@ -11,8 +11,14 @@ import { routes } from "@/config/routes";
 import { PagePermissionGuard } from "@/components/layout/PagePermissionGuard";
 import { PermissionedLinkButton } from "@/components/common/PermissionedLinkButton";
 import { PermissionsList } from "@/components/settings/permission/common/permissions-list";
+import { useState } from "react";
+import { CreatePermissionModal } from "@/components/settings/permission/dialogs/create-permission-modal";
 
 export default function PermissionsPage() {
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const handlePermissionsListRefresh = () => {};
+
   return (
     <PagePermissionGuard
       // A permissão para VER a lista de permissões
@@ -31,7 +37,8 @@ export default function PermissionsPage() {
           </div>
           <div>
             <PermissionedLinkButton
-              href={routes.settings.permissions.create}
+              href="#"
+              onClick={() => setIsCreateModalOpen(true)}
               permission="admin.create_permissions" //
               tooltipMessage="Você não pode criar novas permissões."
               className="w-full @lg:w-auto"
@@ -56,6 +63,12 @@ export default function PermissionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreatePermissionModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={handlePermissionsListRefresh}
+      />
     </PagePermissionGuard>
   );
 }

@@ -41,22 +41,28 @@ export function usePermissionsPagination({
   const [totalItems, setTotalItems] = useState(0);
   const [searchName, setSearchName] = useState("");
   const [searchModule, setSearchModule] = useState("");
-  const [searchRoleId, setSearchRoleId] = useState(""); // Estado para o filtro por Role ID
+  const [searchRoleId, setSearchRoleId] = useState("");
   const { toast } = useToast();
 
-  // Use useRef para armazenar os filtros ATUAIS que serão usados na busca.
-  // Isso evita que fetchPermissions seja recriada quando os filtros de input mudam.
-  const currentFilters = useRef({
-    name: searchName,
-    module: searchModule,
-    roleId: searchRoleId,
+  console.log("SearchName Fora: ", searchName);
+  // Ref para armazenar os valores dos filtros que DISPARAM a busca
+  // Estes são os valores que serão passados para a API
+  const filtersToApplyRef = useRef({
+    name: "",
+    module: "",
+    roleId: "",
   });
 
-  const fetchPermissions = useCallback(async () => {
+  // Função para buscar permissões do backend.
+  // Ela usa os valores do filtersToApplyRef e a currentPage atual.
+  const fetchPermissionsData = useCallback(async () => {
     setIsLoading(true);
+    console.log(
+      "Fetching permissions with filters: ",
+      filtersToApplyRef.current
+    );
     try {
-      // Use os valores do useRef para a busca
-      const filters = currentFilters.current;
+      const filters = filtersToApplyRef.current; // Pega os filtros do ref
 
       const result = await permissionService.getPermissions(
         currentPage,
@@ -66,7 +72,7 @@ export function usePermissionsPagination({
 
       setPermissions(result.data);
       setTotalPages(result.pagination.totalPages);
-      setTotalItems(result.pagination.totalRows);
+      setTotalItems(result.pagination.totalRows); // Corrected to totalRows
     } catch (error: any) {
       console.error("Erro ao carregar permissões:", error);
       toast({
@@ -81,28 +87,27 @@ export function usePermissionsPagination({
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, pageSize, toast]);
+  }, [currentPage, pageSize, toast]); // Dependências do useCallback: apenas paginação e toast
 
+  // useEffect principal que dispara a busca.
   useEffect(() => {
-    // Sincroniza os filtros atuais com o useRef para a próxima busca
-    currentFilters.current = {
-      name: searchName,
-      module: searchModule,
-      roleId: searchRoleId,
-    };
+    fetchPermissionsData();
+  }, [currentPage, fetchPermissionsData]);
 
-    fetchPermissions();
-  }, [fetchPermissions]); // Dependência do useCallback
-
-  // Lógica de manipulação de filtros e paginação
+  // Função para disparar uma nova busca com os filtros ATUAIS para o Input de texto
   const handleSearch = () => {
-    // Quando o botão de busca é clicado, atualiza o useRef e força uma nova busca na página 1
-    currentFilters.current = {
+    // Atualiza os filtros que serão usados na próxima chamada à API.
+    filtersToApplyRef.current = {
       name: searchName,
       module: searchModule,
       roleId: searchRoleId,
     };
-    setCurrentPage(1); // Ao aplicar filtros, sempre volta para a primeira página
+    // Redefine para a primeira página para uma nova busca de filtros.
+    console.log(
+      "handleSearch chamado. filtersToApplyRef.current agora é:",
+      filtersToApplyRef.current
+    );
+    setCurrentPage(1);
   };
 
   const goToNextPage = () => {
@@ -114,12 +119,10 @@ export function usePermissionsPagination({
   };
 
   const goToFirstPage = () => {
-    // NOVA FUNÇÃO
     setCurrentPage(1);
   };
 
   const goToLastPage = () => {
-    // NOVA FUNÇÃO
     setCurrentPage(totalPages);
   };
 

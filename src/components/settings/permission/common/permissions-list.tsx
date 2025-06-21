@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/select";
 import { Permission } from "@/services/auth/permission-schema";
 import { ConfirmDeleteDialog } from "@/components/common/confirm-delete-dialog";
-import { usePermissionsPagination } from "@/hooks/permissions/use-permissions-pagination";
 import { PermissionsTable } from "../tables/permissions-table";
 import { Role } from "@/services/auth/role-schema";
 import RoleService from "@/services/auth/role-service";
 import PermissionService from "@/services/auth/permission-service";
+import { usePermissionsPagination } from "@/hooks/permissions/use-permissions-pagination";
 
 export function PermissionsList() {
   const {
@@ -42,6 +42,12 @@ export function PermissionsList() {
     fetchPermissions,
   } = usePermissionsPagination({ pageSize: 5 });
 
+  console.log("Estados na PermissionsList:", {
+    searchName,
+    searchModule,
+    searchRoleId,
+  });
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [availableModules, setAvailableModules] = useState<string[]>([]);
   const [availableRoles, setAvailableRoles] = useState<Role[]>([]);
@@ -50,25 +56,19 @@ export function PermissionsList() {
 
   async function getModules() {
     try {
-      //setIsLoading(true);
       const data = await PermissionService.getAvailableModules();
       setAvailableModules(data);
     } catch (error) {
       console.log(error);
-    } finally {
-      //setIsLoading(false);
     }
   }
 
   async function getRoles() {
     try {
-      //setIsLoading(true);
       const data = await RoleService.getRoles();
       setAvailableRoles(data);
     } catch (error) {
       console.log(error);
-    } finally {
-      //setIsLoading(false);
     }
   }
 
@@ -96,19 +96,25 @@ export function PermissionsList() {
     }
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex h-40 items-center justify-center">
-  //       <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  //     </div>
-  //   );
-  // }
-
-  // Calcular a altura mínima para o contêiner de loading/tabela para acomodar o pageSize
-  // Assumindo que a altura de uma linha da tabela é ~48px (h-12 na TableHead/TableCell)
   const pageSize = 5; // Defina aqui o mesmo pageSize que você usa no hook
   const minHeightPerItem = 48; // Altura de uma linha da tabela (aproximado, ajuste se necessário)
   const calculatedMinHeight = pageSize * minHeightPerItem;
+
+  // Handler para mudança de Módulo: atualiza o estado e dispara a busca
+  const handleModuleChange = (value: string) => {
+    setSearchModule(value);
+    setTimeout(() => {
+      handleSearch();
+    }, 0);
+  };
+
+  // Handler para mudança de Role: atualiza o estado e dispara a busca
+  const handleRoleChange = (value: string) => {
+    setSearchRoleId(value);
+    setTimeout(() => {
+      handleSearch();
+    }, 0);
+  };
 
   return (
     <>
@@ -127,6 +133,11 @@ export function PermissionsList() {
             onChange={(e) => setSearchName(e.target.value)}
             placeholder="Nome da permissão (ex: users.view)"
             className="border-input focus:ring-primary focus:border-primary"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch();
+              }
+            }}
           />
         </div>
         <div className="grid gap-2">
@@ -136,7 +147,7 @@ export function PermissionsList() {
           >
             Filtrar por Módulo
           </Label>
-          <Select value={searchModule} onValueChange={setSearchModule}>
+          <Select value={searchModule} onValueChange={handleModuleChange}>
             <SelectTrigger id="search-module">
               <SelectValue placeholder="Selecione um módulo" />
             </SelectTrigger>
@@ -157,7 +168,7 @@ export function PermissionsList() {
           >
             Filtrar por Perfil
           </Label>
-          <Select value={searchRoleId} onValueChange={setSearchRoleId}>
+          <Select value={searchRoleId} onValueChange={handleRoleChange}>
             <SelectTrigger id="search-role">
               <SelectValue placeholder="Selecione um perfil" />
             </SelectTrigger>
