@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, RowSelectionState } from "@tanstack/react-table";
 import { Permission } from "@/services/auth/permission-schema";
 import { routes } from "@/config/routes";
 import { DataTable } from "@/components/common/table/data-table";
@@ -55,6 +55,8 @@ export function PermissionsTable({
   const [viewingPermissionId, setViewingPermissionId] = useState<string | null>(
     null
   );
+  // Estado para gerenciar a seleção de linha do TanStack Table
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   const viewPermissionDetails = (id: string) => {
     setViewingPermissionId(id);
@@ -178,6 +180,8 @@ export function PermissionsTable({
         onNextPage={onNextPage}
         onGoToFirstPage={onGoToFirstPage}
         onGoToLastPage={onGoToLastPage}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
       />
 
       {isEditModalOpen && editingPermissionId && (
